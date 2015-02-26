@@ -7,4 +7,5 @@ public interface SpeedListener {
 	public void calibrationPercentageComplete(float percentage);
 	
 	public void calibrationCoefficients(Float[] coefficients);
+	
 }

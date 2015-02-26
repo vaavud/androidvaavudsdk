@@ -262,13 +262,13 @@ public class VaavudAudioProcessing {
 	
 
 	public void signalChanged(short[] signal) {
-		System.arraycopy(signal, 0, buffer, 0, signal.length);
-		applyFilter();
-		if(mCalibrationMode){
-			writeToDataFile();
+		if (signal!=null){
+			System.arraycopy(signal, 0, buffer, 0, signal.length);
+			applyFilter();
+			if(mCalibrationMode){
+				writeToDataFile();
+			}
 		}
-		
-		
 	}
 	
 	private void resetStateMachine() {
@@ -302,26 +302,6 @@ public class VaavudAudioProcessing {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			
-//			String filePath = mFileName+"/"+(new Date()).getTime() +"angle.txt";
-//		    
-//			try {
-//		    	os = new FileOutputStream(filePath);
-//		    } catch (FileNotFoundException e) {
-//		        e.printStackTrace();
-//		    }
-//			try {
-//				os.write(vwp.getStringAvgAngularVelocities().getBytes());
-//			} catch (IOException e) {
-//				e.printStackTrace();
-//			}
-//			try {
-//				os.close();
-//			} catch (IOException e) {
-//
-//				e.printStackTrace();
-//			}
-	//		Log.d("AudioProcessing",vwp.getStringAvgAngularVelocities());
 		}
 	}
 	

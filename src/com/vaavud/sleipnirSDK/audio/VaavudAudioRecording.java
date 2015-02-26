@@ -29,19 +29,19 @@ public class VaavudAudioRecording extends Thread {
         android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_URGENT_AUDIO);
         mSignalListener = signalListener;
         bufferSizeRecording = AudioRecord.getMinBufferSize(sampleRate,AudioFormat.CHANNEL_IN_MONO,AudioFormat.ENCODING_PCM_16BIT);
-        Log.d("VaavudAudioRecording","BufferSizeRecording: "+ bufferSizeRecording);
         vap = new VaavudAudioProcessing(bufferSizeRecording/10,speedListener,mSignalListener,fileName,calibrationMode);
 
         mRecorder = recorder;
     	if (mRecorder != null && mRecorder.getState() != AudioRecord.STATE_UNINITIALIZED) {
     		if (mRecorder.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING)
     		{
-    			Log.d("VaavudAudioRecording","Recorder RECORDING");
+//    			Log.d("VaavudAudioRecording","Recorder RECORDING");
             	mRecorder.stop();
             }
-        }else{
-        	Log.d("VaavudAudioRecording","Recorder UNINITIALIZED");
         }
+//    	else{
+//        	Log.d("VaavudAudioRecording","Recorder UNINITIALIZED");
+//        }
     }
 
     @Override

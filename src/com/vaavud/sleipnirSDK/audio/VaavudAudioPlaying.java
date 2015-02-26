@@ -16,32 +16,28 @@ public class VaavudAudioPlaying extends Thread{
 	private double offset;
 	private boolean isPlaying;
 	
-	private final int duration = 3; // seconds
+	private final int duration = 1; // seconds
     private final int sampleRate = 44100; //Hz
     private final int numSamples = duration * sampleRate;
-    private short sample[] = new short[numSamples];
+    private short sample[] = new short[numSamples*2];
     private final double freqOfTone = 14700; // hz
 	
-	public VaavudAudioPlaying(AudioTrack player,boolean leftOrRight){
+	public VaavudAudioPlaying(AudioTrack player){
 //		android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_URGENT_AUDIO);
-		mLeftOrRight= leftOrRight; 
 		mPlayer = player;
+		mPlayer.setVolume(AudioTrack.getMaxVolume());
 		
 		if (mPlayer != null && mPlayer.getState() != AudioTrack.STATE_UNINITIALIZED ) {
             if (mPlayer.getPlayState() == AudioTrack.PLAYSTATE_PLAYING) {
             	mPlayer.stop();
             }
         }
-        if (mLeftOrRight){
-        	mPlayer.setStereoVolume(AudioTrack.getMaxVolume(), 0.0F);
-        	offset = 0.0F;
-        }
-        else{
-        	mPlayer.setStereoVolume(0.0F, AudioTrack.getMaxVolume());
-        	offset = Math.PI;
-        }
-        for (int i = 0; i < numSamples; ++i) {
-            sample[i] = (short) ((Math.sin((2 * Math.PI * i / (sampleRate/freqOfTone))+offset) * Short.MAX_VALUE));
+      
+    	offset = Math.PI;
+      
+        for (int i = 0; i < numSamples*2; i=i+2) {
+            sample[i] = (short) ((Math.sin((2 * Math.PI * i / (sampleRate/freqOfTone))) * Short.MAX_VALUE));
+            sample[i+1] = (short) ((Math.sin((2 * Math.PI * i / (sampleRate/freqOfTone))+offset) * Short.MAX_VALUE));
         }
 	}
 	
@@ -52,7 +48,6 @@ public class VaavudAudioPlaying extends Thread{
         if (mPlayer.getState() == AudioTrack.STATE_INITIALIZED){
         	mPlayer.play();
 	        while (isPlaying) {
-//	        	
 	        	mPlayer.write(sample, 0, sample.length);
 	        }
 //	        Log.d("AudioPlayer","Stop");
