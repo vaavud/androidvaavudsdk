@@ -25,7 +25,11 @@ public class VaavudAudioPlaying extends Thread{
 	public VaavudAudioPlaying(AudioTrack player){
 //		android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_URGENT_AUDIO);
 		mPlayer = player;
-		mPlayer.setVolume(AudioTrack.getMaxVolume());
+		if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.LOLLIPOP){
+			mPlayer.setStereoVolume(AudioTrack.getMaxVolume(), AudioTrack.getMaxVolume());
+		}else{
+			mPlayer.setVolume(AudioTrack.getMaxVolume());
+		}
 		
 		if (mPlayer != null && mPlayer.getState() != AudioTrack.STATE_UNINITIALIZED ) {
             if (mPlayer.getPlayState() == AudioTrack.PLAYSTATE_PLAYING) {
