@@ -24,12 +24,12 @@ public class VaavudAudioRecording extends Thread {
     /**
      * Give the thread high priority so that it's not canceled unexpectedly, and start it
      */
-    public VaavudAudioRecording(AudioRecord recorder,SpeedListener speedListener, SignalListener signalListener, String fileName, boolean calibrationMode)
+    public VaavudAudioRecording(AudioRecord recorder,AudioTrack player,SpeedListener speedListener, SignalListener signalListener, String fileName, boolean calibrationMode)
     { 
         android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_URGENT_AUDIO);
         mSignalListener = signalListener;
         bufferSizeRecording = AudioRecord.getMinBufferSize(sampleRate,AudioFormat.CHANNEL_IN_MONO,AudioFormat.ENCODING_PCM_16BIT);
-        vap = new VaavudAudioProcessing(bufferSizeRecording/10,speedListener,mSignalListener,fileName,calibrationMode);
+        vap = new VaavudAudioProcessing(bufferSizeRecording/10,speedListener,mSignalListener,fileName,calibrationMode,player);
 
         mRecorder = recorder;
     	if (mRecorder != null && mRecorder.getState() != AudioRecord.STATE_UNINITIALIZED) {

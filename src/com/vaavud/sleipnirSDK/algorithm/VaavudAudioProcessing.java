@@ -9,6 +9,7 @@ import com.vaavud.sleipnirSDK.listener.SignalListener;
 import com.vaavud.sleipnirSDK.listener.SpeedListener;
 
 import android.content.Context;
+import android.media.AudioTrack;
 import android.util.Log;
 
 public class VaavudAudioProcessing {
@@ -49,6 +50,13 @@ public class VaavudAudioProcessing {
 	private VaavudWindProcessing vwp=null;
 	private String mFileName;
 	
+	//Sound calibration
+	private AudioTrack mPlayer;
+	private final static int CALIBRATE_AUDIO_EVERY_X_BUFFER=20;
+	private int calibrationCounter=0;
+//	private float currentVolume=0.35f;
+	private float currentVolume=1.0f;
+	private float volume;
 
 
 	
@@ -56,10 +64,13 @@ public class VaavudAudioProcessing {
 		buffer = null;
 	}
 	
-	public VaavudAudioProcessing(int bufferSizeRecording,SpeedListener speedListener,SignalListener signalListener, String fileName, boolean calibrationMode){
+	public VaavudAudioProcessing(int bufferSizeRecording,SpeedListener speedListener,SignalListener signalListener, String fileName, boolean calibrationMode,AudioTrack player){
 
 		mCalibrationMode = calibrationMode;
+		mPlayer = player;
 		
+		volume = AudioTrack.getMaxVolume();
+		mPlayer.setVolume(volume*currentVolume);
 		
 		buffer = new short[bufferSizeRecording];
 		
@@ -108,11 +119,21 @@ public class VaavudAudioProcessing {
 		}
 		 
 	}
+	
+	
 	private void applyFilter(){
 		
 		int maxDiff=0;
 		int currentSample=0;
-//		Log.d("VaavudAudioProcessing","Apply Filer");
+		
+		int lDiffMax = 0;
+	    int lDiffMin = 10000;
+	    long lDiffSum = 0;
+	    
+	    int avgMax = -10000;
+	    int avgMin = 10000;
+		
+		
 		for(int i=0;i<buffer.length;i++){
 			int bufferIndex = (int) (mod(counter,3));
 	        int bufferIndexLast = (int) (mod(counter-1,3));
@@ -126,7 +147,7 @@ public class VaavudAudioProcessing {
 //	        Log.d("VaavudAudioProcessing","Current Sample: "+currentSample);
 
 	        // Moving Diff Update buffer value
-	        mvgDiff[bufferIndex] = Math.abs(currentSample- mvgAvg[bufferIndexLast]); // ! need to use old mvgAvgValue so place before mvgAvg update
+	        mvgDiff[bufferIndex] = Math.abs(currentSample - mvgAvg[bufferIndexLast]); // ! need to use old mvgAvgValue so place before mvgAvg update
 	        // Moving avg Update buffer value
 	        mvgAvg[bufferIndex] = currentSample;
 	        
@@ -159,10 +180,54 @@ public class VaavudAudioProcessing {
 	        }
 
 	        counter++;
+	     // stats
+	        if (calibrationCounter == CALIBRATE_AUDIO_EVERY_X_BUFFER) {
+
+	            lDiffMax = 	Math.max(lDiffMax, mvgDiffSum);
+
+	            if (mvgAvgSum < 0) {
+	                lDiffMin = Math.min(lDiffMin, mvgDiffSum);
+	            }
+	            
+	            avgMax = Math.max(avgMax, mvgAvgSum);
+	            avgMin = Math.min(avgMin, mvgAvgSum);
+	            
+	            lDiffSum += mvgDiffSum;
+	        }
 	        
 		}
 		
+
+	    if (calibrationCounter == CALIBRATE_AUDIO_EVERY_X_BUFFER) {
+//	    	Log.d("VaavudAudioProcessing","Volume: "+ currentVolume+" , max: "+lDiffMax+ " , min: "+lDiffMin+" , avg: "+(int)(lDiffSum/buffer.length)+" , avgMax: "+avgMax+ " , avgMin: "+avgMin);
+	        adjustVolumeDiffMax(lDiffMax,lDiffMin,(int)(lDiffSum/buffer.length),avgMax,avgMin);
+	        calibrationCounter= 0;
+	    }
+	    calibrationCounter++;
+		
 	}
+	
+	
+	private void adjustVolumeDiffMax(int ldiffMax, int ldiffMin,int avgDiff,int avgMax,int avgMin) {
+		Boolean rotating = (avgMax > 500) && (avgMin < -500);
+	    Boolean stationary = avgMax < 10 && avgMin > -10;
+	    
+//	    if (rotating) Log.d("VaavudAudioProcessing","ROTATING");
+//	    if (stationary) Log.d("VaavudAudioProcessing","STATIONARY");
+	    
+	    if ((stationary && avgDiff < 10) || (rotating && ldiffMax < 1000)) {
+	        currentVolume += 0.01;
+	        if (currentVolume>1.0f) currentVolume=1.0f;
+	        mPlayer.setVolume(volume*currentVolume);
+//	        Log.d("VaavudAudioProcessing","INCREASE: "+ currentVolume+" , max: "+ldiffMax+ " , min: "+ldiffMin+" , avg: "+avgDiff+" , avgMax: "+avgMax+ " , avgMin: "+avgMin);
+	    }
+	    else if (ldiffMax > 3800 || (rotating && ldiffMin > 50)) { // ldiffMax > 2700
+	        currentVolume -= 0.01;
+	        mPlayer.setVolume(volume*currentVolume);
+//	        Log.d("VaavudAudioProcessing","DECREASE: "+ currentVolume+" , max: "+ldiffMax+ " , min: "+ldiffMin+" , avg: "+avgDiff+" , avgMax: "+avgMax+ " , avgMin: "+avgMin);
+	    }
+	}
+	
 	
 	private boolean detectTick(int sampleSinceTick){
 //		Log.d("AudioProcessing","MvgState: "+mvgState + " diffState: "+ diffState);
@@ -287,6 +352,10 @@ public class VaavudAudioProcessing {
 	    lastDiffMax = 1000;
 	    lastDiffMin = 0;
 	    lastMvgGapMax = 0;
+	}
+	
+	public void setPlayer(AudioTrack player){
+		mPlayer = player;
 	}
 
 	

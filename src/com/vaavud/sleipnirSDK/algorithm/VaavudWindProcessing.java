@@ -194,9 +194,6 @@ public class VaavudWindProcessing {
 	    
 	    
 	    if (mCalibrationMode) {
-	        
-//	    	Log.d("VaavudWindProcessing","tickLengthOneRotationLast: "+ tickLengthOneRotationLast);
-//	    	Log.d("VaavudWindProcessing","tickLengthOneRotation: "+ tickLengthOneRotation);
 	    	
 	        if (tickLengthOneRotation > tickLengthOneRotationLast) {
 	            calibrationTickSlowdownCounter++;
@@ -204,12 +201,8 @@ public class VaavudWindProcessing {
 	            calibrationTickSlowdownCounter = 0;
 	        }
 	        
-	        
-//	        Log.d("VaavudWindProcessing","CalibrationTickSlowdownCounter: "+ calibrationTickSlowdownCounter);
-//	        Log.d("VaavudWindProcessing","Initialize Exponential Filter: "+ initializeExponentialFilter);
 	        if (calibrationTickSlowdownCounter > 200 && tickLengthOneRotation > 750 && initializeExponentialFilter) {
 	            // Filter Calibration
-//	        	Log.d("VaavudWindProcessing","FilterCalibration");
 	        	initializeExponentialFilter();
 	            initializeExponentialFilter = false;
 	            
@@ -310,9 +303,7 @@ public class VaavudWindProcessing {
 	}
 	
 	private void endCalibration() {
-		Log.d("VaavudWindProcessing","End Calibration");
 
-	    
 	    if (calibrationTickCounter >= REQUIRED_CALIBRATION_TICKS) {
 	        // Exp Filter
 	        double compensationSum = 0;
@@ -330,7 +321,6 @@ public class VaavudWindProcessing {
 	    }
 	    
 	    mCalibrationMode = false;
-	    Log.d("VaavudWindProcessing","Coefficients: "+compensation.toString());
 	    mSpeedListener.calibrationCoefficients(compensation);
 	    resetDirectionAlgorithm();
 	    

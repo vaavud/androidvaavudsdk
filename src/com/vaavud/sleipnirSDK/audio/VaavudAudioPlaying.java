@@ -1,18 +1,10 @@
 package com.vaavud.sleipnirSDK.audio;
 
-import android.media.AudioManager;
 import android.media.AudioTrack;
-import android.text.Editable;
-import android.text.method.KeyListener;
-import android.util.Log;
-import android.view.KeyEvent;
-import android.view.View;
-import android.view.View.OnKeyListener;
 
 public class VaavudAudioPlaying extends Thread{
 
 	private AudioTrack mPlayer;
-	private boolean mLeftOrRight;
 	private double offset;
 	private boolean isPlaying;
 	
@@ -71,5 +63,8 @@ public class VaavudAudioPlaying extends Thread{
 		}
 //		player.release();
     }
+	
+	
+	
 
 }
