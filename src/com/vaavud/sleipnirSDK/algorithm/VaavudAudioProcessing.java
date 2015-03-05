@@ -70,7 +70,12 @@ public class VaavudAudioProcessing {
 		mPlayer = player;
 		
 		volume = AudioTrack.getMaxVolume();
-		mPlayer.setVolume(volume*currentVolume);
+		
+		if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.LOLLIPOP){
+			mPlayer.setStereoVolume(volume*currentVolume, volume*currentVolume);
+		}else{
+			mPlayer.setVolume(volume*currentVolume);
+		}
 		
 		buffer = new short[bufferSizeRecording];
 		
@@ -218,14 +223,25 @@ public class VaavudAudioProcessing {
 	    if ((stationary && avgDiff < 10) || (rotating && ldiffMax < 1000)) {
 	        currentVolume += 0.01;
 	        if (currentVolume>1.0f) currentVolume=1.0f;
+	        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.LOLLIPOP){
+				mPlayer.setStereoVolume(volume*currentVolume, volume*currentVolume);
+			}else{
+				mPlayer.setVolume(volume*currentVolume);
+			}
 	        mPlayer.setVolume(volume*currentVolume);
 //	        Log.d("VaavudAudioProcessing","INCREASE: "+ currentVolume+" , max: "+ldiffMax+ " , min: "+ldiffMin+" , avg: "+avgDiff+" , avgMax: "+avgMax+ " , avgMin: "+avgMin);
 	    }
 	    else if (ldiffMax > 3800 || (rotating && ldiffMin > 50)) { // ldiffMax > 2700
 	        currentVolume -= 0.01;
-	        mPlayer.setVolume(volume*currentVolume);
+	        if (currentVolume<0.0f) currentVolume=1.0f;
+	        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.LOLLIPOP){
+				mPlayer.setStereoVolume(volume*currentVolume, volume*currentVolume);
+			}else{
+				mPlayer.setVolume(volume*currentVolume);
+			}
 //	        Log.d("VaavudAudioProcessing","DECREASE: "+ currentVolume+" , max: "+ldiffMax+ " , min: "+ldiffMin+" , avg: "+avgDiff+" , avgMax: "+avgMax+ " , avgMin: "+avgMin);
 	    }
+	    
 	}
 	
 	
