@@ -19,8 +19,13 @@ public class HeadsetIntentReceiver extends BroadcastReceiver {
 	@Override
 	public void onReceive(Context context, Intent intent) {
 		if(intent.getAction().equals(Intent.ACTION_HEADSET_PLUG)) {
-			int state = intent.getIntExtra("state", -1);
-			listener.isSleipnirPlugged(state==1);
+			int status = intent.getIntExtra("state", -1);
+			boolean state = status==1;
+			
+			int microphoneStatus = intent.getIntExtra("microphone",-1);
+			boolean connectedMicrophone =  microphoneStatus == 1;
+//			Log.d(TAG,"Microphone Intent Receiver: "+ connectedMicrophone + " Status: "+ state);
+			listener.isSleipnirPlugged(state && connectedMicrophone);
 		}
 	}
 }

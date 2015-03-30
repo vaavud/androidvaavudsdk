@@ -107,7 +107,7 @@ public class VaavudAudioProcessing {
 		    String filePath = fileName;
 //		    Log.d("VaavudAudioProcessing", "FilePath: "+filePath);
 			try {
-		    	os = new FileOutputStream(filePath);
+		    	os = new FileOutputStream(filePath+".rec");
 		    } catch (FileNotFoundException e) {
 		        e.printStackTrace();
 		    }
