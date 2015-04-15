@@ -30,6 +30,7 @@ public class VaavudAudioRecording extends Thread {
         mSignalListener = signalListener;
         bufferSizeRecording = AudioRecord.getMinBufferSize(sampleRate,AudioFormat.CHANNEL_IN_MONO,AudioFormat.ENCODING_PCM_16BIT);
         vap = new VaavudAudioProcessing(bufferSizeRecording/10,speedListener,mSignalListener,fileName,calibrationMode,player);
+//        vap = new VaavudAudioProcessing(bufferSizeRecording,speedListener,mSignalListener,fileName,calibrationMode,player);
 
         mRecorder = recorder;
     	if (mRecorder != null && mRecorder.getState() != AudioRecord.STATE_UNINITIALIZED) {
@@ -58,6 +59,7 @@ public class VaavudAudioRecording extends Thread {
         	
         	mRecorder.startRecording();
         	buffer = new short[bufferSizeRecording/10];
+//        	buffer = new short[bufferSizeRecording];
             /*
              * Loops until something outside of this thread stops it.
              * Reads the data from the recorder and writes it to the audio track for playback.

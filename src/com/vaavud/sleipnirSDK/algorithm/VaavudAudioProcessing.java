@@ -52,11 +52,11 @@ public class VaavudAudioProcessing {
 	
 	//Sound calibration
 	private AudioTrack mPlayer;
-	private final static int CALIBRATE_AUDIO_EVERY_X_BUFFER=20;
+	private final static int CALIBRATE_AUDIO_EVERY_X_BUFFER=10;
 	private int calibrationCounter=0;
 //	private float currentVolume=0.35f;
 	private float currentVolume=1.0f;
-	private float volume;
+	private float maxVolume;
 
 
 	
@@ -65,16 +65,16 @@ public class VaavudAudioProcessing {
 	}
 	
 	public VaavudAudioProcessing(int bufferSizeRecording,SpeedListener speedListener,SignalListener signalListener, String fileName, boolean calibrationMode,AudioTrack player){
-
+		Log.d("SleipnirSDK","VaavudAudioProcessing");
 		mCalibrationMode = calibrationMode;
 		mPlayer = player;
 		
-		volume = AudioTrack.getMaxVolume();
+		maxVolume = AudioTrack.getMaxVolume();
 		
 		if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.LOLLIPOP){
-			mPlayer.setStereoVolume(volume*currentVolume, volume*currentVolume);
+			mPlayer.setStereoVolume(maxVolume*currentVolume, maxVolume*currentVolume);
 		}else{
-			mPlayer.setVolume(volume*currentVolume);
+			mPlayer.setVolume(maxVolume*currentVolume);
 		}
 		
 		buffer = new short[bufferSizeRecording];
@@ -131,12 +131,12 @@ public class VaavudAudioProcessing {
 		int maxDiff=0;
 		int currentSample=0;
 		
-		int lDiffMax = 0;
-	    int lDiffMin = 10000;
-	    long lDiffSum = 0;
-	    
-	    int avgMax = -10000;
-	    int avgMin = 10000;
+//		int lDiffMax = 0;
+//	    int lDiffMin = 10000;
+//	    long lDiffSum = 0;
+//	    
+//	    int avgMax = -10000;
+//	    int avgMin = 10000;
 		
 		
 		for(int i=0;i<buffer.length;i++){
@@ -167,8 +167,6 @@ public class VaavudAudioProcessing {
 	        if (detectTick((int) (counter - lastTick))) {
 	            //Direction Detection Algorithm
 //	        	Log.d("AudioProcessing","sampleSinceTick: "+ counter + " : " + lastTick);	
-	            mvgState = 0;
-	            diffState = 0;
 	            
 	            lastMvgMax = mvgMax;
 	            lastMvgMin = mvgMin;
@@ -179,69 +177,46 @@ public class VaavudAudioProcessing {
 	            
 	            mvgMax = 0;
 	            mvgMin = 0;
+	            diffMax = 0;
+	            diffMin = 6*1000;
+	            mvgState = 0;
+	            diffState = 0;
+	            		
 
-	        	vwp.newTick((int)(counter - lastTick));
+	        	boolean longTick = vwp.newTick((int)(counter - lastTick));
 	            lastTick = counter;
 	        }
 
 	        counter++;
-	     // stats
-	        if (calibrationCounter == CALIBRATE_AUDIO_EVERY_X_BUFFER) {
-
-	            lDiffMax = 	Math.max(lDiffMax, mvgDiffSum);
-
-	            if (mvgAvgSum < 0) {
-	                lDiffMin = Math.min(lDiffMin, mvgDiffSum);
-	            }
-	            
-	            avgMax = Math.max(avgMax, mvgAvgSum);
-	            avgMin = Math.min(avgMin, mvgAvgSum);
-	            
-	            lDiffSum += mvgDiffSum;
-	        }
-	        
 		}
 		
-
-	    if (calibrationCounter == CALIBRATE_AUDIO_EVERY_X_BUFFER) {
-//	    	Log.d("VaavudAudioProcessing","Volume: "+ currentVolume+" , max: "+lDiffMax+ " , min: "+lDiffMin+" , avg: "+(int)(lDiffSum/buffer.length)+" , avgMax: "+avgMax+ " , avgMin: "+avgMin);
-	        adjustVolumeDiffMax(lDiffMax,lDiffMin,(int)(lDiffSum/buffer.length),avgMax,avgMin);
-	        calibrationCounter= 0;
+		if (diffMax > 3.8*1000 && calibrationCounter > CALIBRATE_AUDIO_EVERY_X_BUFFER) {
+			Log.d("SleipnirSDK","diffMax: "+diffMax);
+			currentVolume -= 0.01;
+	        adjustVolume();
+	        calibrationCounter = 0;
 	    }
-	    calibrationCounter++;
-		
+		Log.d("SleipnirSDK","mvgMin: "+ mvgMin);
+	    if ((mvgMin < -1.4*1000 && diffMax > 1*1000) && calibrationCounter > CALIBRATE_AUDIO_EVERY_X_BUFFER) {
+	    	Log.d("SleipnirSDK","mvgMin: "+ mvgMin + " diffMax: "+diffMax);
+	    	currentVolume -= 0.01;
+	    	adjustVolume();
+	        calibrationCounter = 0;
+	    }
+	    
+	    calibrationCounter++;		
 	}
 	
-	
-	private void adjustVolumeDiffMax(int ldiffMax, int ldiffMin,int avgDiff,int avgMax,int avgMin) {
-		Boolean rotating = (avgMax > 500) && (avgMin < -500);
-	    Boolean stationary = avgMax < 10 && avgMin > -10;
-	    
-//	    if (rotating) Log.d("VaavudAudioProcessing","ROTATING");
-//	    if (stationary) Log.d("VaavudAudioProcessing","STATIONARY");
-	    
-	    if ((stationary && avgDiff < 10) || (rotating && ldiffMax < 1000)) {
-	        currentVolume += 0.01;
-	        if (currentVolume>1.0f) currentVolume=1.0f;
-	        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.LOLLIPOP){
-				mPlayer.setStereoVolume(volume*currentVolume, volume*currentVolume);
-			}else{
-				mPlayer.setVolume(volume*currentVolume);
-			}
-	        mPlayer.setVolume(volume*currentVolume);
-//	        Log.d("VaavudAudioProcessing","INCREASE: "+ currentVolume+" , max: "+ldiffMax+ " , min: "+ldiffMin+" , avg: "+avgDiff+" , avgMax: "+avgMax+ " , avgMin: "+avgMin);
-	    }
-	    else if (ldiffMax > 3800 || (rotating && ldiffMin > 50)) { // ldiffMax > 2700
-	        currentVolume -= 0.01;
-	        if (currentVolume<0.0f) currentVolume=1.0f;
-	        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.LOLLIPOP){
-				mPlayer.setStereoVolume(volume*currentVolume, volume*currentVolume);
-			}else{
-				mPlayer.setVolume(volume*currentVolume);
-			}
-//	        Log.d("VaavudAudioProcessing","DECREASE: "+ currentVolume+" , max: "+ldiffMax+ " , min: "+ldiffMin+" , avg: "+avgDiff+" , avgMax: "+avgMax+ " , avgMin: "+avgMin);
-	    }
-	    
+	private void adjustVolume(){
+
+	    if (currentVolume>1.0f) currentVolume=1.0f;
+	    if (currentVolume < 0.1) currentVolume=1.0f;
+	    Log.d("SleipnirSDK","Adjusting Volume: "+ currentVolume);
+	    if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.LOLLIPOP){
+			mPlayer.setStereoVolume(maxVolume*currentVolume, maxVolume*currentVolume);
+		}else{
+			mPlayer.setVolume(maxVolume*currentVolume);
+		}	    
 	}
 	
 	
