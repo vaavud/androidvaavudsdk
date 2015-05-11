@@ -1,0 +1,13 @@
+ic_launcher-web.png
+bin/AndroidManifest.xml
+bin/androidsleipnirsdk.jar
+bin/classes/com/vaavud/sleipnirSDK/BuildConfig.class
+bin/classes/com/vaavud/sleipnirSDK/HeadsetIntentReceiver.class
+bin/classes/com/vaavud/sleipnirSDK/OrientationSensorManagerSleipnir.class
+bin/classes/com/vaavud/sleipnirSDK/algorithm/VaavudAudioProcessing.class
+bin/classes/com/vaavud/sleipnirSDK/algorithm/VaavudWindProcessing.class
+bin/classes/com/vaavud/sleipnirSDK/audio/VaavudAudioPlaying.class
+bin/classes/com/vaavud/sleipnirSDK/audio/VaavudAudioRecording.class
+bin/classes/com/vaavud/sleipnirSDK/listener/PlugListener.class
+bin/classes/com/vaavud/sleipnirSDK/listener/SignalListener.class
+bin/classes/com/vaavud/sleipnirSDK/listener/SpeedListener.class

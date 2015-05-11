@@ -485,9 +485,9 @@ public class VaavudWindProcessing {
 		}
 	}
 	
-	private void printArray(Object[] array, String name){
-		String vector = name+": ["+array[0];
-        for (int i=1;i<expTickLengthRelativePrTeeth.length; i++) vector+=","+array[i];
-        Log.d("SleipnirSDK",vector+"]");
-	}
+//	private void printArray(Object[] array, String name){
+//		String vector = name+": ["+array[0];
+//        for (int i=1;i<expTickLengthRelativePrTeeth.length; i++) vector+=","+array[i];
+//        Log.d("SleipnirSDK",vector+"]");
+//	}
 }
