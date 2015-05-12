@@ -12,6 +12,7 @@ import java.io.IOException;
 
 public class VaavudAudioProcessing {
 
+
 		private int windowAveragingSize;
 		//Sound processing
 		private int[] mvgAvg = new int[3];
@@ -38,7 +39,7 @@ public class VaavudAudioProcessing {
 		private int mvgDropHalf;
 		private int diffRiseThreshold;
 		private boolean mCalibrationMode;
-
+		private boolean mVolumeCalibrated;
 
 		//Buffer
 		private short[] buffer;
@@ -50,22 +51,28 @@ public class VaavudAudioProcessing {
 		//Sound calibration
 		private AudioTrack mPlayer;
 		private final static int CALIBRATE_AUDIO_EVERY_X_BUFFER = 10;
-		private int calibrationCounter = 0;
-		//	private float currentVolume=0.35f;
+		private int volumeAdjustCounter = 0;
+		private float calibrationVolumeStep = 0.0f;
 		private float currentVolume = 1.0f;
 		private float maxVolume;
+		private SpeedListener mSpeedListener = null;
 
 
 		public VaavudAudioProcessing() {
 				buffer = null;
 		}
 
-		public VaavudAudioProcessing(int bufferSizeRecording, SpeedListener speedListener, SignalListener signalListener, String fileName, boolean calibrationMode, AudioTrack player) {
+		public VaavudAudioProcessing(int bufferSizeRecording, SpeedListener speedListener, SignalListener signalListener, String fileName, boolean calibrationMode, AudioTrack player, Float playerVolume) {
 //				Log.d("SleipnirSDK", "VaavudAudioProcessing");
 				mCalibrationMode = calibrationMode;
 				mPlayer = player;
 
+				if (playerVolume != null && !calibrationMode) {
+						mVolumeCalibrated = true;
+						currentVolume = playerVolume;
+				}
 				maxVolume = AudioTrack.getMaxVolume();
+				calibrationVolumeStep = maxVolume / 100;
 
 				if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.LOLLIPOP) {
 						mPlayer.setStereoVolume(maxVolume * currentVolume, maxVolume * currentVolume);
@@ -127,14 +134,6 @@ public class VaavudAudioProcessing {
 				int maxDiff = 0;
 				int currentSample = 0;
 
-//		int lDiffMax = 0;
-//	    int lDiffMin = 10000;
-//	    long lDiffSum = 0;
-//	    
-//	    int avgMax = -10000;
-//	    int avgMin = 10000;
-
-
 				for (int i = 0; i < buffer.length; i++) {
 						int bufferIndex = (int) (mod(counter, 3));
 						int bufferIndexLast = (int) (mod(counter - 1, 3));
@@ -174,7 +173,7 @@ public class VaavudAudioProcessing {
 								mvgMax = 0;
 								mvgMin = 0;
 								diffMax = 0;
-								diffMin = 6 * 1000;
+								diffMin = 6000;
 								mvgState = 0;
 								diffState = 0;
 
@@ -185,22 +184,38 @@ public class VaavudAudioProcessing {
 
 						counter++;
 				}
+				if (!mVolumeCalibrated) {
+						if (diffMax > 3.5 * 1000 && volumeAdjustCounter > CALIBRATE_AUDIO_EVERY_X_BUFFER) {
+								//						Log.d("SleipnirSDK", "diffMax: " + diffMax);
+								currentVolume -= calibrationVolumeStep;
+								adjustVolume();
+								volumeAdjustCounter = 0;
+						}
+						//				Log.d("SleipnirSDK", "mvgMin: " + mvgMin);
+						if ((mvgMin < -2000 && diffMax > 1 * 1000) && volumeAdjustCounter > CALIBRATE_AUDIO_EVERY_X_BUFFER) {
+								if (mvgMin < -2500) {
+										this.currentVolume -= 10 * calibrationVolumeStep;
+								} else {
+										currentVolume -= calibrationVolumeStep;
+								}
+								//						Log.d("SleipnirSDK", "mvgMin: " + mvgMin + " diffMax: " + diffMax);
+								adjustVolume();
+								volumeAdjustCounter = 0;
+						}
 
-				if (diffMax > 3.8 * 1000 && calibrationCounter > CALIBRATE_AUDIO_EVERY_X_BUFFER) {
-//						Log.d("SleipnirSDK", "diffMax: " + diffMax);
-						currentVolume -= 0.01;
-						adjustVolume();
-						calibrationCounter = 0;
-				}
-//				Log.d("SleipnirSDK", "mvgMin: " + mvgMin);
-				if ((mvgMin < -1.4 * 1000 && diffMax > 1 * 1000) && calibrationCounter > CALIBRATE_AUDIO_EVERY_X_BUFFER) {
-//						Log.d("SleipnirSDK", "mvgMin: " + mvgMin + " diffMax: " + diffMax);
-						currentVolume -= 0.01;
-						adjustVolume();
-						calibrationCounter = 0;
-				}
+						if (volumeAdjustCounter > 20 * CALIBRATE_AUDIO_EVERY_X_BUFFER) {
+								Log.d("SleipnirSDK", "Sound Calibrated: " + currentVolume);
+								mVolumeCalibrated = true;
+								mSpeedListener.volumeLevel(currentVolume);
+						}
 
-				calibrationCounter++;
+						if (mCalibrationMode) {
+								Log.d("SleipnirSDK", "SOUND:Adjusting volume while calibrating: " + currentVolume);
+								mSpeedListener.volumeLevel(currentVolume);
+						}
+
+						volumeAdjustCounter++;
+				}
 		}
 
 		private void adjustVolume() {
@@ -295,6 +310,7 @@ public class VaavudAudioProcessing {
 						diffMin = mvgDiffSum;
 
 				if (sampleSinceTick == 6000) {
+						lastTick = counter;
 //	    	Log.d("AudioProcessing", "Reset State machine: "+sampleSinceTick);
 						resetStateMachine();
 				}
