@@ -70,7 +70,6 @@ public class VaavudAudioPlaying extends Thread {
 						mPlayer.play();
 						while (isPlaying) {
 								if (sample != null) {
-
 										mPlayer.write(sample, 0, sample.length);
 								}
 						}

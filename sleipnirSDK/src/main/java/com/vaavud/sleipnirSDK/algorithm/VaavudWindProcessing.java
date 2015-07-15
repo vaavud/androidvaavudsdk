@@ -4,6 +4,7 @@ import com.vaavud.sleipnirSDK.listener.SignalListener;
 import com.vaavud.sleipnirSDK.listener.SpeedListener;
 
 import java.util.Date;
+import java.util.List;
 
 public class VaavudWindProcessing {
 
@@ -16,7 +17,6 @@ public class VaavudWindProcessing {
 		private static int SMOOTHING_TIME_CONSTANT_CALIBRATION = 12;
 		private static int TEETH_PR_REV = 15;
 		private static int SAMPLE_FREQUENCY = 44100;
-
 
 		private int startCounter;
 		private boolean mCalibrationMode;
@@ -141,7 +141,6 @@ public class VaavudWindProcessing {
 		}
 
 
-		//	@Override
 		public boolean newTick(int tickLength) {
 				if (!startLocated) {
 						locateStart(tickLength);

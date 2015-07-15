@@ -26,21 +26,12 @@ public class VaavudAudioRecording extends Thread {
 		public VaavudAudioRecording(AudioRecord recorder, AudioTrack player, SpeedListener speedListener, SignalListener signalListener, String fileName, boolean calibrationMode, Float playerVolume) {
 				android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_URGENT_AUDIO);
 				mSignalListener = signalListener;
-//				bufferSizeRecording = sampleRate * duration;
-				bufferSizeRecording = AudioRecord.getMinBufferSize(sampleRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
-				vap = new VaavudAudioProcessing(bufferSizeRecording / 10, speedListener, mSignalListener, fileName, calibrationMode, player, playerVolume);
-
-
 				mRecorder = recorder;
 				if (mRecorder != null && mRecorder.getState() != AudioRecord.STATE_UNINITIALIZED) {
 						if (mRecorder.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING) {
-//    			Log.d("VaavudAudioRecording","Recorder RECORDING");
 								mRecorder.stop();
 						}
 				}
-//    	else{
-//        	Log.d("VaavudAudioRecording","Recorder UNINITIALIZED");
-//        }
 		}
 
 		@Override
@@ -51,11 +42,9 @@ public class VaavudAudioRecording extends Thread {
          */
 				try {
 						stopped = false;
-//        	Log.d("Audio","Buffer Size: "+ (int) (bufferSizeRecording*Math.floor((44000/bufferSizeRecording))));
-
 						mRecorder.startRecording();
 						buffer = new short[bufferSizeRecording / 10];
-//        	buffer = new short[bufferSizeRecording];
+
 						/*
              * Loops until something outside of this thread stops it.
              * Reads the data from the recorder and writes it to the audio track for playback.
@@ -63,8 +52,7 @@ public class VaavudAudioRecording extends Thread {
 
 						while (!stopped) {
 								N = mRecorder.read(buffer, 0, buffer.length);
-//                Log.d("VaavudAudioRecording","Numer of bits read : "+ N);
-								vap.signalChanged(buffer);
+                Log.d("VaavudAudioRecording","Numer of bits read : "+ N);
 								if (mSignalListener != null) {
 										mSignalListener.signalChanged(buffer);
 								}

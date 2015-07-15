@@ -1,7 +1,7 @@
 package com.vaavud.sleipnirSDK.algorithm;
 
 import android.media.AudioTrack;
-import android.util.Log;
+import android.util.Pair;
 
 import com.vaavud.sleipnirSDK.listener.SignalListener;
 import com.vaavud.sleipnirSDK.listener.SpeedListener;
@@ -9,6 +9,8 @@ import com.vaavud.sleipnirSDK.listener.SpeedListener;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class VaavudAudioProcessing {
 
@@ -56,6 +58,7 @@ public class VaavudAudioProcessing {
 		private float currentVolume = 1.0f;
 		private float maxVolume;
 		private SpeedListener mSpeedListener = null;
+		private SignalListener mSignalListener = null;
 
 
 		public VaavudAudioProcessing() {
@@ -67,18 +70,15 @@ public class VaavudAudioProcessing {
 				mCalibrationMode = calibrationMode;
 				mPlayer = player;
 
+				mSignalListener = signalListener;
+				mSpeedListener = speedListener;
+
 				if (playerVolume != null && !calibrationMode) {
 						mVolumeCalibrated = true;
 						currentVolume = playerVolume;
 				}
 				maxVolume = AudioTrack.getMaxVolume();
 				calibrationVolumeStep = maxVolume / 100;
-
-				if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.LOLLIPOP) {
-						mPlayer.setStereoVolume(maxVolume * currentVolume, maxVolume * currentVolume);
-				} else {
-						mPlayer.setVolume(maxVolume * currentVolume);
-				}
 
 				buffer = new short[bufferSizeRecording];
 
@@ -88,10 +88,10 @@ public class VaavudAudioProcessing {
 				mvgDiffSum = 0;
 				lastValue = 0;
 
-				lastDiffMax = 1000;
+				lastDiffMax = Short.MAX_VALUE;
 				lastDiffMin = 0;
-				lastMvgMax = 500;
-				lastMvgMin = -500;
+				lastMvgMax = Short.MAX_VALUE / 2;
+				lastMvgMin = -Short.MAX_VALUE / 2;
 				lastMvgGapMax = 0;
 				lastTick = 0;
 
@@ -129,93 +129,107 @@ public class VaavudAudioProcessing {
 		}
 
 
-		private void applyFilter() {
+		public Pair<List<Integer>, Long> processSamples(short[] inputBuffer) {
+				if (inputBuffer != null) {
 
-				int maxDiff = 0;
-				int currentSample = 0;
+						List<Integer> samplesDistanceTick = new ArrayList<Integer>();
 
-				for (int i = 0; i < buffer.length; i++) {
-						int bufferIndex = (int) (mod(counter, 3));
-						int bufferIndexLast = (int) (mod(counter - 1, 3));
-
-						// Moving Avg subtract
-						mvgAvgSum -= mvgAvg[bufferIndex];
-						// Moving Diff subtrack
-						mvgDiffSum -= mvgDiff[bufferIndex];
-
-						currentSample = (int) (1000 * ((float) buffer[i] / Short.MAX_VALUE));
-//	        Log.d("VaavudAudioProcessing","Current Sample: "+currentSample);
-
-						// Moving Diff Update buffer value
-						mvgDiff[bufferIndex] = Math.abs(currentSample - mvgAvg[bufferIndexLast]); // ! need to use old mvgAvgValue so place before mvgAvg update
-						// Moving avg Update buffer value
-						mvgAvg[bufferIndex] = currentSample;
-
-						// Moving Avg update SUM
-						mvgAvgSum += mvgAvg[bufferIndex];
-						mvgDiffSum += mvgDiff[bufferIndex];
-
-						if (maxDiff < mvgDiffSum) {
-								maxDiff = mvgDiffSum;
-						}
-
-						if (detectTick((int) (counter - lastTick))) {
-								//Direction Detection Algorithm
-//	        	Log.d("AudioProcessing","sampleSinceTick: "+ counter + " : " + lastTick);	
-
-								lastMvgMax = mvgMax;
-								lastMvgMin = mvgMin;
-								lastDiffMax = diffMax;
-								lastDiffMin = diffMin;
-								lastMvgGapMax = mvgGapMax;
-//	            Log.d("AudioProcessing",lastMvgMax+":"+lastMvgMin+":"+lastDiffMax+":"+lastDiffMin+":"+lastMvgGapMax);
-
-								mvgMax = 0;
-								mvgMin = 0;
-								diffMax = 0;
-								diffMin = 6000;
-								mvgState = 0;
-								diffState = 0;
-
-
-								boolean longTick = vwp.newTick((int) (counter - lastTick));
-								lastTick = counter;
-						}
-
-						counter++;
-				}
-				if (!mVolumeCalibrated) {
-						if (diffMax > 3.5 * 1000 && volumeAdjustCounter > CALIBRATE_AUDIO_EVERY_X_BUFFER) {
-								//						Log.d("SleipnirSDK", "diffMax: " + diffMax);
-								currentVolume -= calibrationVolumeStep;
-								adjustVolume();
-								volumeAdjustCounter = 0;
-						}
-						//				Log.d("SleipnirSDK", "mvgMin: " + mvgMin);
-						if ((mvgMin < -2000 && diffMax > 1 * 1000) && volumeAdjustCounter > CALIBRATE_AUDIO_EVERY_X_BUFFER) {
-								if (mvgMin < -2500) {
-										this.currentVolume -= 10 * calibrationVolumeStep;
-								} else {
-										currentVolume -= calibrationVolumeStep;
-								}
-								//						Log.d("SleipnirSDK", "mvgMin: " + mvgMin + " diffMax: " + diffMax);
-								adjustVolume();
-								volumeAdjustCounter = 0;
-						}
-
-						if (volumeAdjustCounter > 20 * CALIBRATE_AUDIO_EVERY_X_BUFFER) {
-								Log.d("SleipnirSDK", "Sound Calibrated: " + currentVolume);
-								mVolumeCalibrated = true;
-								mSpeedListener.volumeLevel(currentVolume);
-						}
+						System.arraycopy(inputBuffer, 0, buffer, 0, inputBuffer.length);
 
 						if (mCalibrationMode) {
-								Log.d("SleipnirSDK", "SOUND:Adjusting volume while calibrating: " + currentVolume);
-								mSpeedListener.volumeLevel(currentVolume);
+								writeToDataFile();
 						}
 
-						volumeAdjustCounter++;
+						int maxDiff = 0;
+						int currentSample = 0;
+
+						for (int i = 0; i < buffer.length; i++) {
+								int bufferIndex = (int) (mod(counter, 3));
+								int bufferIndexLast = (int) (mod(counter - 1, 3));
+
+								// Moving Avg subtract
+								mvgAvgSum -= mvgAvg[bufferIndex];
+								// Moving Diff subtrack
+								mvgDiffSum -= mvgDiff[bufferIndex];
+
+								currentSample = buffer[i];
+//	        Log.d("VaavudAudioProcessing","Current Sample: "+currentSample);
+
+								// Moving Diff Update buffer value
+								mvgDiff[bufferIndex] = Math.abs(currentSample - mvgAvg[bufferIndexLast]); // ! need to use old mvgAvgValue so place before mvgAvg update
+								// Moving avg Update buffer value
+								mvgAvg[bufferIndex] = currentSample;
+
+								// Moving Avg update SUM
+								mvgAvgSum += mvgAvg[bufferIndex];
+								mvgDiffSum += mvgDiff[bufferIndex];
+
+								if (maxDiff < mvgDiffSum) {
+										maxDiff = mvgDiffSum;
+								}
+
+								if (mSignalListener != null) {
+//						Log.d("AudioProcessing","Sending AVG Signal");
+										mSignalListener.signalChanged(mvgAvgSum, mvgDiffSum, currentVolume);
+								}
+
+								if (detectTick((int) (counter - lastTick))) {
+										//Direction Detection Algorithm
+//	        	Log.d("AudioProcessing","sampleSinceTick: "+ counter + " : " + lastTick);
+
+										lastMvgMax = mvgMax;
+										lastMvgMin = mvgMin;
+										lastDiffMax = diffMax;
+										lastDiffMin = diffMin;
+										lastMvgGapMax = mvgGapMax;
+//	            Log.d("AudioProcessing",lastMvgMax+":"+lastMvgMin+":"+lastDiffMax+":"+lastDiffMin+":"+lastMvgGapMax);
+
+										mvgMax = 0;
+										mvgMin = 0;
+										diffMax = 0;
+										diffMin = 6 * Short.MAX_VALUE;
+										mvgState = 0;
+										diffState = 0;
+										samplesDistanceTick.add((int) (counter - lastTick));
+										lastTick = counter;
+								}
+								counter++;
+						}
+//				if (!mVolumeCalibrated) {
+//						if (diffMax > 3.5 * Short.MAX_VALUE && volumeAdjustCounter > CALIBRATE_AUDIO_EVERY_X_BUFFER) {
+//								//						Log.d("SleipnirSDK", "diffMax: " + diffMax);
+//								currentVolume -= calibrationVolumeStep;
+//								adjustVolume();
+//								volumeAdjustCounter = 0;
+//						}
+//						//				Log.d("SleipnirSDK", "mvgMin: " + mvgMin);
+//						if ((mvgMin < -2*Short.MAX_VALUE && diffMax > 1 * Short.MAX_VALUE) && volumeAdjustCounter > CALIBRATE_AUDIO_EVERY_X_BUFFER) {
+//								if (mvgMin < -2.5*Short.MAX_VALUE) {
+//										this.currentVolume -= 10 * calibrationVolumeStep;
+//								} else {
+//										currentVolume -= calibrationVolumeStep;
+//								}
+//								//						Log.d("SleipnirSDK", "mvgMin: " + mvgMin + " diffMax: " + diffMax);
+//								adjustVolume();
+//								volumeAdjustCounter = 0;
+//						}
+//
+//						if (volumeAdjustCounter > 20 * CALIBRATE_AUDIO_EVERY_X_BUFFER) {
+//								Log.d("SleipnirSDK", "Sound Calibrated: " + currentVolume);
+//								mVolumeCalibrated = true;
+//								mSpeedListener.volumeLevel(currentVolume);
+//						}
+//
+//						if (mCalibrationMode) {
+//								Log.d("SleipnirSDK", "SOUND:Adjusting volume while calibrating: " + currentVolume);
+//								mSpeedListener.volumeLevel(currentVolume);
+//						}
+//
+//						volumeAdjustCounter++;
+//				}
+						return Pair.create(samplesDistanceTick,(counter-lastTick));
 				}
+				return null;
 		}
 
 		private void adjustVolume() {
@@ -223,10 +237,8 @@ public class VaavudAudioProcessing {
 				if (currentVolume > 1.0f) currentVolume = 1.0f;
 				if (currentVolume < 0.1) currentVolume = 1.0f;
 //	    Log.d("SleipnirSDK","Adjusting Volume: "+ currentVolume);
-				if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.LOLLIPOP) {
-						mPlayer.setStereoVolume(maxVolume * currentVolume, maxVolume * currentVolume);
-				} else {
-						mPlayer.setVolume(maxVolume * currentVolume);
+				if (mSignalListener != null) {
+						mSpeedListener.volumeLevel(currentVolume);
 				}
 		}
 
@@ -329,15 +341,18 @@ public class VaavudAudioProcessing {
 		}
 
 
-		public void signalChanged(short[] signal) {
-				if (signal != null) {
-						System.arraycopy(signal, 0, buffer, 0, signal.length);
-						applyFilter();
-						if (mCalibrationMode) {
-								writeToDataFile();
-						}
-				}
-		}
+//		public long processSamples(short[] inputBuffer) {
+//				if (inputBuffer != null) {
+//						System.arraycopy(inputBuffer, 0, buffer, 0, inputBuffer.length);
+//
+//						if (mCalibrationMode) {
+//								writeToDataFile();
+//						}
+//						return applyFilter();
+//				} else {
+//						return -1;
+//				}
+//		}
 
 		private void resetStateMachine() {
 //		Log.d("AudioProcessing", "ResetStateMachine");
@@ -350,9 +365,9 @@ public class VaavudAudioProcessing {
 				diffMax = 0;
 				diffMin = 0;
 
-				lastMvgMax = 500;
-				lastMvgMin = -500;
-				lastDiffMax = 1000;
+				lastMvgMax = Short.MAX_VALUE / 2;
+				lastMvgMin = -Short.MAX_VALUE / 2;
+				lastDiffMax = Short.MAX_VALUE;
 				lastDiffMin = 0;
 				lastMvgGapMax = 0;
 		}
