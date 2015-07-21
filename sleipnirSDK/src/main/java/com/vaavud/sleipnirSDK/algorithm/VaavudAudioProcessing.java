@@ -82,6 +82,7 @@ public class VaavudAudioProcessing {
 
 				buffer = new short[bufferSizeRecording];
 
+
 				//SoundProcessing Init
 				counter = 0;
 				mvgAvgSum = 0;
@@ -130,11 +131,11 @@ public class VaavudAudioProcessing {
 
 
 		public Pair<List<Integer>, Long> processSamples(short[] inputBuffer) {
+
 				if (inputBuffer != null) {
 
-						List<Integer> samplesDistanceTick = new ArrayList<Integer>();
-
 						System.arraycopy(inputBuffer, 0, buffer, 0, inputBuffer.length);
+						List<Integer> samplesDistanceTick = new ArrayList<Integer>();
 
 						if (mCalibrationMode) {
 								writeToDataFile();
@@ -153,7 +154,7 @@ public class VaavudAudioProcessing {
 								mvgDiffSum -= mvgDiff[bufferIndex];
 
 								currentSample = buffer[i];
-//	        Log.d("VaavudAudioProcessing","Current Sample: "+currentSample);
+//	        			Log.d("VaavudAudioProcessing", "Current Sample: " + currentSample);
 
 								// Moving Diff Update buffer value
 								mvgDiff[bufferIndex] = Math.abs(currentSample - mvgAvg[bufferIndexLast]); // ! need to use old mvgAvgValue so place before mvgAvg update
@@ -227,7 +228,7 @@ public class VaavudAudioProcessing {
 //
 //						volumeAdjustCounter++;
 //				}
-						return Pair.create(samplesDistanceTick,(counter-lastTick));
+						return Pair.create(samplesDistanceTick, (counter - lastTick));
 				}
 				return null;
 		}
@@ -356,6 +357,7 @@ public class VaavudAudioProcessing {
 
 		private void resetStateMachine() {
 //		Log.d("AudioProcessing", "ResetStateMachine");
+
 				mvgState = 0;
 				diffState = 0;
 				gapBlock = 0;

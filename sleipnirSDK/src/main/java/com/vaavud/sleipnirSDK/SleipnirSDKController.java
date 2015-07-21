@@ -9,7 +9,9 @@ import android.media.AudioManager;
 import android.media.AudioRecord;
 import android.media.AudioTrack;
 import android.media.MediaRecorder;
+import android.os.Build;
 import android.os.Handler;
+import android.util.Log;
 import android.util.Pair;
 import android.widget.Toast;
 
@@ -17,13 +19,15 @@ import com.vaavud.sleipnirSDK.algorithm.VaavudAudioProcessing;
 import com.vaavud.sleipnirSDK.algorithm.VaavudWindProcessing;
 import com.vaavud.sleipnirSDK.audio.VaavudAudioPlaying;
 import com.vaavud.sleipnirSDK.audio.VaavudAudioRecording;
+import com.vaavud.sleipnirSDK.audio.VaavudVolumeAdjust;
+import com.vaavud.sleipnirSDK.listener.AudioListener;
 import com.vaavud.sleipnirSDK.listener.SignalListener;
 import com.vaavud.sleipnirSDK.listener.SpeedListener;
 
 import java.util.List;
 
 
-public class SleipnirSDK implements SignalListener{
+public class SleipnirSDKController implements AudioListener {
 
 		private static final String KEY_CALIBRATION_COEFFICENTS = "calibrationCoefficients";
 		private static final String KEY_PLAYER_VOLUME = "playerVolume";
@@ -44,6 +48,8 @@ public class SleipnirSDK implements SignalListener{
 		private final int duration = 1; // seconds
 		private final int sampleRate = 44100; //Hz
 		private final int numSamples = duration * sampleRate;
+		private int bufferSizeRecording = 512;
+		private int minBufferSizeRecording;
 
 		private final int N = 3; //Hz
 		private long initialTime;
@@ -57,18 +63,28 @@ public class SleipnirSDK implements SignalListener{
 		private VaavudAudioRecording audioRecording;
 		private VaavudAudioProcessing vap;
 		private VaavudWindProcessing vwp;
+		private VaavudVolumeAdjust vva;
 		private String mFileName;
 		private SpeedListener speedListener;
 		private SignalListener signalListener;
 
 		private SettingsContentObserver mSettingsContentObserver;
+		private int numRotations = 0;
+
+		private float previousVolume = 1.0f;
+		private int[] diff20List;
+		private float[] sNList;
 
 
-		public SleipnirSDK(Context context, boolean calibrationMode) {
+		public SleipnirSDKController(Context context, boolean calibrationMode, SpeedListener speedListener, SignalListener signalListener) {
 //		Log.d("SleipnirCoreController","Sleipnir Core Controller");
 				mContext = context;
 				mCalibrationMode = calibrationMode;
 				appContext = mContext.getApplicationContext();
+				this.speedListener = speedListener;
+				this.signalListener = signalListener;
+				diff20List = new int[101];
+				sNList = new float[101];
 
 		}
 
@@ -90,29 +106,43 @@ public class SleipnirSDK implements SignalListener{
 		}
 
 		public void startMeasuring() {
-
+				Log.d("SleipnirCoreController", "Start Measuring");
 				mSettingsContentObserver = new SettingsContentObserver(mContext, new Handler());
 				appContext.getContentResolver().registerContentObserver(android.provider.Settings.System.CONTENT_URI, true, mSettingsContentObserver);
 
 				if (player == null)
 						player = new AudioTrack(AudioManager.STREAM_MUSIC, sampleRate, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT, numSamples * 2, AudioTrack.MODE_STREAM);
-				if (recorder == null)
-						recorder = new AudioRecord(MediaRecorder.AudioSource.MIC, sampleRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, sampleRate * N);
 
-				myAudioManager = (AudioManager) appContext.getSystemService(Context.AUDIO_SERVICE);
-				int result = myAudioManager.requestAudioFocus(null, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE);
-
-				if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-						Toast.makeText(appContext, R.string.connection_toast, Toast.LENGTH_LONG);
-						// Start playback.
+				if (recorder == null) {
+						minBufferSizeRecording = AudioRecord.getMinBufferSize(sampleRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
+						if (minBufferSizeRecording < N * sampleRate) {
+								minBufferSizeRecording = N * sampleRate;
+						}
+//						Log.d("SleipnirCoreController", "MinBufferSizeRecording: " + minBufferSizeRecording);
+						recorder = new AudioRecord(MediaRecorder.AudioSource.MIC, sampleRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, minBufferSizeRecording);
 				}
 
-				myAudioManager.setMicrophoneMute(false);
 
+//				Log.d("SleipnirCoreController", "Player Status: " + player.getState());
+//				Log.d("SleipnirCoreController", "Recorder Status: " + recorder.getState());
+
+				myAudioManager = (AudioManager) mContext.getSystemService(Context.AUDIO_SERVICE);
+				int result = myAudioManager.requestAudioFocus(null, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE);
+				Log.d("SleipnirCoreController", "MyAudioManager result: " + result);
+				if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+						Toast.makeText(mContext, R.string.connection_toast, Toast.LENGTH_LONG).show();
+						// Start playback.
+				} else {
+						Toast.makeText(mContext, "Permision Rejected", Toast.LENGTH_LONG).show();
+				}
+
+//				myAudioManager.setMicrophoneMute(false);
+				isMeasuring = true;
+				resumeMeasuring();
 		}
 
 		public void stopMeasuring() {
-//		Log.d("SleipnirCoreController","Stop Measuring");
+				Log.d("SleipnirCoreController", "Stop Measuring");
 				pauseMeasuring();
 				isMeasuring = false;
 				appContext.getContentResolver().unregisterContentObserver(mSettingsContentObserver);
@@ -121,7 +151,7 @@ public class SleipnirSDK implements SignalListener{
 
 		public void pauseMeasuring() {
 				if (isMeasuring) {
-//			Log.d("SleipnirCoreController","Pause Measuring");
+						Log.d("SleipnirCoreController", "Pause Measuring");
 						if (audioPlayer != null) audioPlayer.close();
 						if (audioRecording != null) audioRecording.close();
 
@@ -159,7 +189,7 @@ public class SleipnirSDK implements SignalListener{
 						AlertDialog alert = builder1.create();
 
 						if (volume < maxVolume) {
-//								Log.d("SleipnirCoreController", "Volume: " + volume + " " + maxVolume);
+								Log.d("SleipnirCoreController", "Volume: " + volume + " " + maxVolume);
 								alert.show();
 						}
 						if (orientationSensorManager.isSensorAvailable()) {
@@ -167,16 +197,24 @@ public class SleipnirSDK implements SignalListener{
 						}
 
 						audioPlayer = new VaavudAudioPlaying(player, mFileName, mCalibrationMode, playerVolume);
+						vva = new VaavudVolumeAdjust(bufferSizeRecording);
+						vap = new VaavudAudioProcessing(bufferSizeRecording, speedListener, signalListener, mFileName, mCalibrationMode, player, playerVolume);
+						vwp = new VaavudWindProcessing(speedListener, signalListener, mCalibrationMode);
+						audioRecording = new VaavudAudioRecording(recorder, player, speedListener, this, bufferSizeRecording, vva, vap, vwp);
+//						if (coefficients!=null) {
+//								audioRecording.setCoefficients(coefficients);
+//						}
 
-						audioRecording = new VaavudAudioRecording(recorder, player, speedListener, signalListener, mFileName, mCalibrationMode, playerVolume);
-						audioRecording.setCoefficients(coefficients);
+
 						audioPlayer.start();
 						audioRecording.start();
-						int bufferSizeRecording = AudioRecord.getMinBufferSize(sampleRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
-						vap = new VaavudAudioProcessing(bufferSizeRecording / 10, speedListener, this, mFileName, mCalibrationMode, player, playerVolume);
-						vwp = new VaavudWindProcessing(speedListener, signalListener, mCalibrationMode);
+
 
 				}
+		}
+
+		public double getOrientationAngle() {
+				return orientationSensorManager.getAngle();
 		}
 
 		public void stopController() {
@@ -194,20 +232,48 @@ public class SleipnirSDK implements SignalListener{
 		}
 
 		@Override
-		public void signalChanged(short[] signal) {
-				Pair<List<Integer>,Long> samplesResult = vap.processSamples(signal);
-				for (int i=0;i<samplesResult.first.size();i++) {
-						vwp.newTick(samplesResult.first.get(i));
+		public void newAudioBuffer(final short[] audioBuffer) {
+				float volume;
+
+				if (signalListener != null) signalListener.signalChanged(audioBuffer);
+
+				if (audioBuffer != null) {
+						Pair<Integer, Double> noise = vva.noiseEstimator(audioBuffer);
+						Pair<List<Integer>, Long> samplesResult = vap.processSamples(audioBuffer);
+						for (int i = 0; i < samplesResult.first.size(); i++) {
+								if (vwp.newTick(samplesResult.first.get(i))) numRotations++;
+						}
+						if (noise != null) {
+
+								int detectionErrors = vwp.getTickDetectionErrorCount();
+								volume = vva.newVolume(noise.first, noise.second, numRotations, detectionErrors);
+//												volume = previousVolume;
+
+//												int index = (int)(volume*100);
+//												Log.d("SleipnirSDKController","Volume Index: "+index);
+//												diff20List[(int)(volume*100)]=noise.first;
+//												sNList[(int)(volume*100)] = noise.second.floatValue();
+
+								if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+										player.setStereoVolume(volume, volume);
+								} else {
+										player.setVolume(volume);
+								}
+								previousVolume = volume;
+
+//												previousVolume=previousVolume-0.01f;
+//												if (previousVolume < 0 ) previousVolume=0.0f;
+								numRotations = 0;
+								vwp.resetDetectionErrors();
+						}
 				}
 		}
 
-		@Override
-		public void signalChanged(float[] signal, float[] signalEstimated) {
-
+		public int[] getDiff20() {
+				return diff20List;
 		}
 
-		@Override
-		public void signalChanged(int mvgAvg, int diffFilter, float volumeLevel) {
-
+		public float[] getsN() {
+				return sNList;
 		}
 }

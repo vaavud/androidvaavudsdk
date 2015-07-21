@@ -4,7 +4,6 @@ import com.vaavud.sleipnirSDK.listener.SignalListener;
 import com.vaavud.sleipnirSDK.listener.SpeedListener;
 
 import java.util.Date;
-import java.util.List;
 
 public class VaavudWindProcessing {
 
@@ -159,6 +158,7 @@ public class VaavudWindProcessing {
 				}
 
 				lastTickLengthCompensated = tickLengthCompensated;
+
 
 				if (teethIndex == TEETH_PR_REV - 1) return true;
 				else return false;
@@ -474,6 +474,14 @@ public class VaavudWindProcessing {
 //						Log.d("SleipnirSDK", "Algo Compensation" + Arrays.toString(newCompensation));
 						System.arraycopy(newCompensation, 0, this.compensation, 0, newCompensation.length);
 				}
+		}
+
+		public void resetDetectionErrors() {
+				tickDetectionErrorCount = 0;
+		}
+
+		public int getTickDetectionErrorCount() {
+				return tickDetectionErrorCount;
 		}
 
 

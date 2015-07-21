@@ -6,6 +6,6 @@ public interface SignalListener {
 
 		public void signalChanged(float[] signal, float[] signalEstimated);
 
-		public void signalChanged(int mvgAvg, int diffFilter,float volumeLevel);
+		public void signalChanged(int mvgAvg, int diffFilter, float volumeLevel);
 
 }
