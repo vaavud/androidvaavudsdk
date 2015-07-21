@@ -165,14 +165,8 @@ public class VaavudAudioProcessing {
 								mvgAvgSum += mvgAvg[bufferIndex];
 								mvgDiffSum += mvgDiff[bufferIndex];
 
-								if (maxDiff < mvgDiffSum) {
+								if (maxDiff < mvgDiffSum)
 										maxDiff = mvgDiffSum;
-								}
-
-								if (mSignalListener != null) {
-//						Log.d("AudioProcessing","Sending AVG Signal");
-										mSignalListener.signalChanged(mvgAvgSum, mvgDiffSum, currentVolume);
-								}
 
 								if (detectTick((int) (counter - lastTick))) {
 										//Direction Detection Algorithm
@@ -196,38 +190,7 @@ public class VaavudAudioProcessing {
 								}
 								counter++;
 						}
-//				if (!mVolumeCalibrated) {
-//						if (diffMax > 3.5 * Short.MAX_VALUE && volumeAdjustCounter > CALIBRATE_AUDIO_EVERY_X_BUFFER) {
-//								//						Log.d("SleipnirSDK", "diffMax: " + diffMax);
-//								currentVolume -= calibrationVolumeStep;
-//								adjustVolume();
-//								volumeAdjustCounter = 0;
-//						}
-//						//				Log.d("SleipnirSDK", "mvgMin: " + mvgMin);
-//						if ((mvgMin < -2*Short.MAX_VALUE && diffMax > 1 * Short.MAX_VALUE) && volumeAdjustCounter > CALIBRATE_AUDIO_EVERY_X_BUFFER) {
-//								if (mvgMin < -2.5*Short.MAX_VALUE) {
-//										this.currentVolume -= 10 * calibrationVolumeStep;
-//								} else {
-//										currentVolume -= calibrationVolumeStep;
-//								}
-//								//						Log.d("SleipnirSDK", "mvgMin: " + mvgMin + " diffMax: " + diffMax);
-//								adjustVolume();
-//								volumeAdjustCounter = 0;
-//						}
-//
-//						if (volumeAdjustCounter > 20 * CALIBRATE_AUDIO_EVERY_X_BUFFER) {
-//								Log.d("SleipnirSDK", "Sound Calibrated: " + currentVolume);
-//								mVolumeCalibrated = true;
-//								mSpeedListener.volumeLevel(currentVolume);
-//						}
-//
-//						if (mCalibrationMode) {
-//								Log.d("SleipnirSDK", "SOUND:Adjusting volume while calibrating: " + currentVolume);
-//								mSpeedListener.volumeLevel(currentVolume);
-//						}
-//
-//						volumeAdjustCounter++;
-//				}
+
 						return Pair.create(samplesDistanceTick, (counter - lastTick));
 				}
 				return null;
