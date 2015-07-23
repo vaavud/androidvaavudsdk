@@ -8,6 +8,4 @@ public interface SpeedListener {
 
 		public void calibrationCoefficients(Float[] coefficients);
 
-		public void volumeLevel(Float volume);
-
 }

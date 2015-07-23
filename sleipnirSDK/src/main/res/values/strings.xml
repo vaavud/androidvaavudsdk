@@ -4,6 +4,7 @@
     tools:ignore="MissingTranslation">
 
     <string name="connection_toast">Sleipnir connected</string>
+    <string name="permision_toast">Plug in again Sleipnir</string>
 
     <string name="button_ok">OK</string>
     <string name="sound_disclaimer_title">Warning</string>

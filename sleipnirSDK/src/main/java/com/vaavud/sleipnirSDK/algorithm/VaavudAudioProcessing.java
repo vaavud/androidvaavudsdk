@@ -1,10 +1,8 @@
 package com.vaavud.sleipnirSDK.algorithm;
 
-import android.media.AudioTrack;
-import android.util.Pair;
 
-import com.vaavud.sleipnirSDK.listener.SignalListener;
-import com.vaavud.sleipnirSDK.listener.SpeedListener;
+import android.util.Log;
+import android.util.Pair;
 
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -14,8 +12,7 @@ import java.util.List;
 
 public class VaavudAudioProcessing {
 
-
-		private int windowAveragingSize;
+		private static final String TAG = "SDK:AudioProcessing";
 		//Sound processing
 		private int[] mvgAvg = new int[3];
 		private int mvgAvgSum;
@@ -41,44 +38,21 @@ public class VaavudAudioProcessing {
 		private int mvgDropHalf;
 		private int diffRiseThreshold;
 		private boolean mCalibrationMode;
-		private boolean mVolumeCalibrated;
 
 		//Buffer
 		private short[] buffer;
 
 		private FileOutputStream os = null;
 		private VaavudWindProcessing vwp = null;
-		private String mFileName;
-
-		//Sound calibration
-		private AudioTrack mPlayer;
-		private final static int CALIBRATE_AUDIO_EVERY_X_BUFFER = 10;
-		private int volumeAdjustCounter = 0;
-		private float calibrationVolumeStep = 0.0f;
-		private float currentVolume = 1.0f;
-		private float maxVolume;
-		private SpeedListener mSpeedListener = null;
-		private SignalListener mSignalListener = null;
 
 
 		public VaavudAudioProcessing() {
 				buffer = null;
 		}
 
-		public VaavudAudioProcessing(int bufferSizeRecording, SpeedListener speedListener, SignalListener signalListener, String fileName, boolean calibrationMode, AudioTrack player, Float playerVolume) {
-//				Log.d("SleipnirSDK", "VaavudAudioProcessing");
+		public VaavudAudioProcessing(int bufferSizeRecording, String fileName, boolean calibrationMode) {
+//				Log.d(TAG, "VaavudAudioProcessing");
 				mCalibrationMode = calibrationMode;
-				mPlayer = player;
-
-				mSignalListener = signalListener;
-				mSpeedListener = speedListener;
-
-				if (playerVolume != null && !calibrationMode) {
-						mVolumeCalibrated = true;
-						currentVolume = playerVolume;
-				}
-				maxVolume = AudioTrack.getMaxVolume();
-				calibrationVolumeStep = maxVolume / 100;
 
 				buffer = new short[bufferSizeRecording];
 
@@ -117,7 +91,6 @@ public class VaavudAudioProcessing {
 						}
 				}
 
-				vwp = new VaavudWindProcessing(speedListener, signalListener, mCalibrationMode);
 		}
 
 		public void writeToDataFile() {
@@ -137,10 +110,6 @@ public class VaavudAudioProcessing {
 						System.arraycopy(inputBuffer, 0, buffer, 0, inputBuffer.length);
 						List<Integer> samplesDistanceTick = new ArrayList<Integer>();
 
-						if (mCalibrationMode) {
-								writeToDataFile();
-						}
-
 						int maxDiff = 0;
 						int currentSample = 0;
 
@@ -154,7 +123,7 @@ public class VaavudAudioProcessing {
 								mvgDiffSum -= mvgDiff[bufferIndex];
 
 								currentSample = buffer[i];
-//	        			Log.d("VaavudAudioProcessing", "Current Sample: " + currentSample);
+//	        			Log.d(TAG, "Current Sample: " + currentSample);
 
 								// Moving Diff Update buffer value
 								mvgDiff[bufferIndex] = Math.abs(currentSample - mvgAvg[bufferIndexLast]); // ! need to use old mvgAvgValue so place before mvgAvg update
@@ -170,14 +139,13 @@ public class VaavudAudioProcessing {
 
 								if (detectTick((int) (counter - lastTick))) {
 										//Direction Detection Algorithm
-//	        	Log.d("AudioProcessing","sampleSinceTick: "+ counter + " : " + lastTick);
-
+//	        					Log.d(TAG, "sampleSinceTick: " + counter + " : " + lastTick);
 										lastMvgMax = mvgMax;
 										lastMvgMin = mvgMin;
 										lastDiffMax = diffMax;
 										lastDiffMin = diffMin;
 										lastMvgGapMax = mvgGapMax;
-//	            Log.d("AudioProcessing",lastMvgMax+":"+lastMvgMin+":"+lastDiffMax+":"+lastDiffMin+":"+lastMvgGapMax);
+//	            Log.d(TAG,lastMvgMax+":"+lastMvgMin+":"+lastDiffMax+":"+lastDiffMin+":"+lastMvgGapMax);
 
 										mvgMax = 0;
 										mvgMin = 0;
@@ -191,24 +159,16 @@ public class VaavudAudioProcessing {
 								counter++;
 						}
 
+						if (mCalibrationMode) {
+								writeToDataFile();
+						}
 						return Pair.create(samplesDistanceTick, (counter - lastTick));
 				}
 				return null;
 		}
 
-		private void adjustVolume() {
-
-				if (currentVolume > 1.0f) currentVolume = 1.0f;
-				if (currentVolume < 0.1) currentVolume = 1.0f;
-//	    Log.d("SleipnirSDK","Adjusting Volume: "+ currentVolume);
-				if (mSignalListener != null) {
-						mSpeedListener.volumeLevel(currentVolume);
-				}
-		}
-
-
 		private boolean detectTick(int sampleSinceTick) {
-//		Log.d("AudioProcessing","MvgState: "+mvgState + " diffState: "+ diffState);
+//		Log.d(TAG,"MvgState: "+mvgState + " diffState: "+ diffState);
 				switch (mvgState) {
 						case 0:
 								if (sampleSinceTick < 60) {
@@ -275,7 +235,7 @@ public class VaavudAudioProcessing {
 						default:
 								break;
 				}
-//	    Log.d("AudioProcessing","mvgAvgSum: "+mvgAvgSum+" mvgMax: "+mvgMax);
+//	    Log.d(TAG,"mvgAvgSum: "+mvgAvgSum+" mvgMax: "+mvgMax);
 				if (mvgAvgSum > mvgMax)
 						mvgMax = mvgAvgSum;
 
@@ -287,7 +247,7 @@ public class VaavudAudioProcessing {
 
 				if (sampleSinceTick == 6000) {
 						lastTick = counter;
-//	    	Log.d("AudioProcessing", "Reset State machine: "+sampleSinceTick);
+//	    	Log.d(TAG, "Reset State machine: "+sampleSinceTick);
 						resetStateMachine();
 				}
 
@@ -296,30 +256,8 @@ public class VaavudAudioProcessing {
 
 		}
 
-		public int getWindowAveragingSize() {
-				return windowAveragingSize;
-		}
-
-		public void setWindowAveragingSize(int windowAveragingSize) {
-				this.windowAveragingSize = windowAveragingSize;
-		}
-
-
-//		public long processSamples(short[] inputBuffer) {
-//				if (inputBuffer != null) {
-//						System.arraycopy(inputBuffer, 0, buffer, 0, inputBuffer.length);
-//
-//						if (mCalibrationMode) {
-//								writeToDataFile();
-//						}
-//						return applyFilter();
-//				} else {
-//						return -1;
-//				}
-//		}
-
 		private void resetStateMachine() {
-//		Log.d("AudioProcessing", "ResetStateMachine");
+//		Log.d(TAG, "ResetStateMachine");
 
 				mvgState = 0;
 				diffState = 0;
@@ -337,17 +275,10 @@ public class VaavudAudioProcessing {
 				lastMvgGapMax = 0;
 		}
 
-		public void setPlayer(AudioTrack player) {
-				mPlayer = player;
-		}
-
-
 		public void close() {
 				buffer = null;
 				mvgAvg = null;
 				mvgDiff = null;
-				vwp.close();
-				vwp = null;
 				if (mCalibrationMode && os != null) {
 						try {
 								os.close();
@@ -378,11 +309,11 @@ public class VaavudAudioProcessing {
 				return result;
 		}
 
-		public void setCoefficients(Float[] coefficients) {
-				if (vwp != null) {
-						vwp.setCoefficients(coefficients);
-				}
-
-		}
+//		public void setCoefficients(Float[] coefficients) {
+//				if (vwp != null) {
+//						vwp.setCoefficients(coefficients);
+//				}
+//
+//		}
 
 }

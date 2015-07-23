@@ -1,5 +1,7 @@
 package com.vaavud.sleipnirSDK.algorithm;
 
+import android.util.Log;
+
 import com.vaavud.sleipnirSDK.listener.SignalListener;
 import com.vaavud.sleipnirSDK.listener.SpeedListener;
 
@@ -117,7 +119,7 @@ public class VaavudWindProcessing {
 
 
 		private void locateStart(int samples) {
-//		Log.d("WindProcessign","Locale Start: "+samples);
+//		Log.d("VaavudWindProcessing","Locale Start: "+samples);
 				if (samples > 1.2 * lastTickLength && samples < 1.4 * lastTickLength) {
 						if (startCounter == 2 * TEETH_PR_REV) {
 								startLocated = true;
@@ -146,6 +148,8 @@ public class VaavudWindProcessing {
 						lastTickLength = tickLength;
 						return false;
 				}
+//				Log.d("VaavudWindProcessing","Located: "+tickLength);
+
 				// check if new tick value is within 20% of expected value
 				float tickLengthCompensated = tickLength * compensation[teethIndex];
 
@@ -182,6 +186,7 @@ public class VaavudWindProcessing {
 
 
 				if (mCalibrationMode) {
+//						Log.d("VaavudWindProcessing", "Entering Calibration: "+ tickLengthOneRotation + " " + calibrationTickSlowdownCounter);
 						if (tickLengthOneRotation > tickLengthOneRotationLast) {
 								calibrationTickSlowdownCounter++;
 						} else {
@@ -193,7 +198,7 @@ public class VaavudWindProcessing {
 										initializeExponentialFilter();
 
 										// Mean Calibration
-//		        	Log.d("VaavudWindProcessing","Mean Calibration");
+//		        	Log.d("VaavudWindProcessing", "Mean Calibration");
 										for (int i = 0; i < TEETH_PR_REV; i++) {
 //		            	Log.d("SleipnirSDK","Mean Calibration: "+i);
 												tickLengthRelativePrTeethSum[i] = 0;

@@ -1,12 +1,15 @@
 package com.vaavud.sleipnirSDK.audio;
 
 import android.media.AudioTrack;
+import android.util.Log;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
 
 
 public class VaavudAudioPlaying extends Thread {
+
+		private static final String TAG = "SDK:AudioPlaying";
 
 		private AudioTrack mPlayer;
 		private double offset;
@@ -51,7 +54,7 @@ public class VaavudAudioPlaying extends Thread {
 				if (mCalibrationMode) {
 
 						String filePath = fileName;
-//		    Log.d("VaavudAudioProcessing", "FilePath: "+filePath);
+//		    Log.d(TAG, "FilePath: "+filePath);
 						try {
 								os = new FileOutputStream(filePath + ".play");
 								os.write(short2byte(sample));
@@ -73,8 +76,11 @@ public class VaavudAudioPlaying extends Thread {
 										mPlayer.write(sample, 0, sample.length);
 								}
 						}
-//	        Log.d("AudioPlayer","Stop");
+//	        Log.d(TAG, "Stop");
+				}else{
+//						Log.d(TAG, "Player not Initialized " + mPlayer.getState());
 				}
+
 		}
 
 		/**
@@ -86,8 +92,8 @@ public class VaavudAudioPlaying extends Thread {
 				if (mPlayer != null && mPlayer.getState() == AudioTrack.PLAYSTATE_PLAYING) {
 						mPlayer.flush();
 						mPlayer.stop();
+						mPlayer.release();
 				}
-//		player.release();
 		}
 
 		//convert short to byte
