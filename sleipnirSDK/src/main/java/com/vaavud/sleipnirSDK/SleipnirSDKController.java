@@ -41,7 +41,6 @@ public class SleipnirSDKController implements AudioListener {
 		private boolean isMeasuring = false;
 
 		private boolean mCalibrationMode;
-		private Handler handler;
 
 		private AudioManager myAudioManager;
 		private AudioRecord recorder;
@@ -58,8 +57,6 @@ public class SleipnirSDKController implements AudioListener {
 		private Float[] coefficients;
 		private Float playerVolume=1.0f;
 
-		private float calibrationProgress = 0F;
-
 
 		private VaavudAudioPlaying audioPlayer;
 		private VaavudAudioRecording audioRecording;
@@ -75,10 +72,6 @@ public class SleipnirSDKController implements AudioListener {
 
 		private SharedPreferences preferences;
 
-//		private float previousVolume = 1.0f;
-//		private int[] diff20List;
-//		private float[] sNList;
-
 
 		public SleipnirSDKController(Context context, boolean calibrationMode, SpeedListener speedListener, SignalListener signalListener, Float[] coefficients, String fileName) {
 //		Log.d("SleipnirCoreController","Sleipnir Core Controller");
@@ -90,9 +83,7 @@ public class SleipnirSDKController implements AudioListener {
 				this.signalListener = signalListener;
 				this.coefficients = coefficients;
 				mFileName = fileName;
-//				Log.d(TAG, "MFileName Constructor: "+mFileName);
-//				diff20List = new int[101];
-//				sNList = new float[101];
+
 
 		}
 
@@ -114,10 +105,10 @@ public class SleipnirSDKController implements AudioListener {
 		}
 
 		public void startMeasuring() {
-				Log.d(TAG, "Start Measuring");
+//				Log.d(TAG, "Start Measuring");
 				playerVolume= preferences.getFloat("playerVolume",1.0f);
 
-				Log.d(TAG,"Player Volume: "+playerVolume);
+//				Log.d(TAG,"Player Volume: "+playerVolume);
 				mSettingsContentObserver = new SettingsContentObserver(mContext, new Handler());
 				appContext.getContentResolver().registerContentObserver(android.provider.Settings.System.CONTENT_URI, true, mSettingsContentObserver);
 
@@ -138,14 +129,7 @@ public class SleipnirSDKController implements AudioListener {
 //				Log.d(TAG, "Recorder Status: " + recorder.getState());
 
 				myAudioManager = (AudioManager) mContext.getSystemService(Context.AUDIO_SERVICE);
-				int result = myAudioManager.requestAudioFocus(null, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE);
-//				Log.d(TAG, "MyAudioManager result: " + result);
-				if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-						Toast.makeText(mContext, R.string.connection_toast, Toast.LENGTH_LONG).show();
-						// Start playback.
-				} else {
-						Toast.makeText(mContext, R.string.permision_toast, Toast.LENGTH_LONG).show();
-				}
+
 
 				myAudioManager.setMicrophoneMute(false);
 				isMeasuring = true;
@@ -163,7 +147,7 @@ public class SleipnirSDKController implements AudioListener {
 		}
 
 
-		public void pauseMeasuring() {
+		private void pauseMeasuring() {
 				if (isMeasuring) {
 
 //						Log.d(TAG, "Pause Measuring");
@@ -182,14 +166,25 @@ public class SleipnirSDKController implements AudioListener {
 				}
 		}
 
-		public void resumeMeasuring() {
+		private void resumeMeasuring() {
 
 				if (isMeasuring) {
+
+
+						int result = myAudioManager.requestAudioFocus(null, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE);
+//				Log.d(TAG, "MyAudioManager result: " + result);
+						if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+								Toast.makeText(mContext, R.string.connection_toast, Toast.LENGTH_LONG).show();
+								// Start playback.
+						} else {
+								Toast.makeText(mContext, R.string.permision_toast, Toast.LENGTH_LONG).show();
+						}
 
 						int volume = myAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
 						final int maxVolume = myAudioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
 
 						myAudioManager.setStreamVolume(AudioManager.STREAM_MUSIC, maxVolume, AudioManager.FLAG_REMOVE_SOUND_AND_VIBRATE);
+
 
 						AlertDialog.Builder builder1 = new AlertDialog.Builder(mContext);
 						builder1.setTitle(appContext.getResources().getString(R.string.sound_disclaimer_title));
@@ -208,6 +203,9 @@ public class SleipnirSDKController implements AudioListener {
 						if (volume < maxVolume) {
 //								Log.d("SleipnirCoreController", "Volume: " + volume + " " + maxVolume);
 								alert.show();
+						}
+						if (orientationSensorManager!=null){
+								orientationSensorManager = new OrientationSensorManagerSleipnir(mContext);
 						}
 						if (orientationSensorManager.isSensorAvailable()) {
 								orientationSensorManager.start();
@@ -234,7 +232,7 @@ public class SleipnirSDKController implements AudioListener {
 		}
 
 		public boolean isMeasuring(){
-				return  isMeasuring;
+				return isMeasuring;
 		}
 
 		public double getOrientationAngle() {
@@ -248,7 +246,6 @@ public class SleipnirSDKController implements AudioListener {
 						orientationSensorManager = null;
 				}
 
-				handler = null;
 				if (player != null) player.release();
 				if (recorder != null) recorder.release();
 				player = null;
@@ -271,14 +268,7 @@ public class SleipnirSDKController implements AudioListener {
 						if (noise != null) {
 								int detectionErrors = vwp.getTickDetectionErrorCount();
 								playerVolume = vva.newVolume(noise.first, noise.second, numRotations, detectionErrors);
-								Log.d(TAG,"Volume: "+playerVolume);
-//								playerVolume = 0.95f;
-//												volume = previousVolume;
-
-//												int index = (int)(volume*100);
-
-//												diff20List[(int)(volume*100)]=noise.first;
-//												sNList[(int)(volume*100)] = noise.second.floatValue();
+//								Log.d(TAG,"Volume: "+playerVolume);
 
 								if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
 										player.setStereoVolume(playerVolume, playerVolume);
@@ -286,33 +276,9 @@ public class SleipnirSDKController implements AudioListener {
 										player.setVolume(playerVolume);
 								}
 
-//												previousVolume=previousVolume-0.01f;
-//												if (previousVolume < 0 ) previousVolume=0.0f;
 								numRotations = 0;
 								vwp.resetDetectionErrors();
 						}
 				}
 		}
-
-//		private Float[] asFloatObjectArray(String array) {
-//						if (array == null) {
-//								return null;
-//						}
-//						array = array.replace("[", "").replace("]", "");
-//						String[] values = array.split(",");
-//						Float[] result = new Float[values.length];
-//						for (int i = 0; i < values.length; i++) {
-//								String v = values[i];
-//								result[i] = Float.parseFloat(v);
-//						}
-//						return result;
-//		}
-
-//		public int[] getDiff20() {
-//				return diff20List;
-//		}
-//
-//		public float[] getsN() {
-//				return sNList;
-//		}
 }
