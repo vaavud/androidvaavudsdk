@@ -2,7 +2,7 @@ package com.vaavud.sleipnirSDK.audio;
 
 import android.media.AudioFormat;
 import android.media.AudioRecord;
-import android.util.Log;
+//import android.util.Log;
 import android.util.Pair;
 
 import java.util.ArrayList;
@@ -54,12 +54,12 @@ public class VaavudVolumeAdjust {
 				counter = 0;
 				sN = 0;
 				samplesPerBuffer = 100;
-				volumeLevel = (int)(playerVolume*100);
-				if (volumeLevel!=100){
-					volState = STEEPESTASCENT_STATE;
+				volumeLevel = (int) (playerVolume * 100);
+				if (volumeLevel != 50) {
+						volState = STEEPESTASCENT_STATE;
 				}
 				buffer = new short[audioBufferSize];
-				skipSamples = (int) (AudioRecord.getMinBufferSize(sampleRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT) * 1.5);
+				skipSamples = (int) (AudioRecord.getMinBufferSize(sampleRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT) * 2);
 				samplesPerBuffer = (int) (0.01f * audioBufferSize);
 		}
 
@@ -91,13 +91,13 @@ public class VaavudVolumeAdjust {
 		}
 
 		public float newVolume(int diff20, double sN, int numRotations, int detectionErrors) {
-//				Log.d(TAG, "INPUT VOL: Diff20: " + diff20 + " sN: " + sN + " NumRotations: " + numRotations + " detectionErrors: " + detectionErrors + " VolumeLevel " + volumeLevel);
+//				Log.d(TAG,"VolState: "+ volState);
 				volumeCounter++;
 				float volumeChange = 0.0f;
 				if (sN > 6 && numRotations >= 1) {
 						volState = STEEPESTASCENT_STATE;
 				}
-
+//				Log.d(TAG, "INPUT VOL: " + "VolState: " + volState + " Diff20: " + diff20 + " sN: " + sN + " NumRotations: " + numRotations + " detectionErrors: " + detectionErrors + " VolumeCounter: " + volumeCounter);
 				switch (volState) {
 						case DIFF_STATE:
 								float noiseDiff = Math.abs(diff20 - NOISE_THRESHOLD);
@@ -109,7 +109,7 @@ public class VaavudVolumeAdjust {
 										volumeChange = (float) VOLUME_STEPS * noiseDiff / 10000;
 								}
 								volumeLevel = (int) (volumeLevel + volumeChange);
-//								Log.d(TAG, "VolState: " + volState + " VolLevel: " + volumeLevel + " VolChange: " + volumeChange+ " VolumeCounter"+volumeCounter);
+//								Log.d(TAG, "VolState: " + volState + " VolLevel: " + volumeLevel + " VolChange: " + volumeChange + " VolumeCounter" + volumeCounter);
 								if (volumeCounter > 15) {
 										volState = SEQUENTIALSEARCH_STATE;
 								}
@@ -125,19 +125,22 @@ public class VaavudVolumeAdjust {
 								break;
 
 						case STEEPESTASCENT_STATE:
-								boolean signalIsGood = sN > 1.2 && numRotations >= 1;
+//								Log.d(TAG, "STEEPESTASCENT_STATE sN: "+sN + " numRotations: "+numRotations);
+								boolean signalIsGood = (sN > 1.2 && numRotations >= 1);
 								if (signalIsGood) {
-										sNVolume[volumeLevel] = sNVolume[volumeLevel] == 0 ? sN : sNVolume[volumeLevel] * 0.7 + 0.3 * sN;
+//										Log.d(TAG, "SignalIsGood volumeLevel: " + volumeLevel + "snVolume: " + sNVolume[volumeLevel]);
+										sNVolume[volumeLevel] = ((sNVolume[volumeLevel] == 0.0d) ? sN : sNVolume[volumeLevel] * 0.7 + 0.3 * sN);
 										volumeCounter = 0;
 								} else {
+//										Log.d(TAG, "SignalIsNotGood sN: "+sN + " numRotations: "+numRotations);
 										if (volumeCounter > 40) {
 												returnToDiffState();
 												break;
 										}
 								}
-//								Log.d(TAG, "VolState: " + volState + " VolLevel: " + volumeLevel);
 								switch (expState) {
 										case TOP_STATE:
+//												Log.d(TAG, "TOP_STATE");
 												int bestSNVol = bestSNVolume();
 												if (sNVolume[bestSNVol] < 6) {
 														returnToDiffState();
@@ -154,6 +157,7 @@ public class VaavudVolumeAdjust {
 												break;
 
 										case EXPLORE_STATE:
+//												Log.d(TAG, "EXPLORE_STATE");
 												switch (dirState) {
 														case LEFT_STATE:
 																volumeLevel = volumeLevel - 1;
@@ -164,7 +168,6 @@ public class VaavudVolumeAdjust {
 																dirState = LEFT_STATE;
 																break;
 												}
-//												Log.d(TAG, "DirState: " + dirState + " VolLevel: " + volumeLevel + " VolChange: " + volumeChange);
 												expState = TOP_STATE;
 												break;
 								}
@@ -172,8 +175,8 @@ public class VaavudVolumeAdjust {
 
 				if (volumeLevel < 0) {
 						volumeLevel = 0;
-				} else if (volumeLevel > VOLUME_STEPS) {
-						volumeLevel = VOLUME_STEPS;
+				} else if (volumeLevel > VOLUME_STEPS-1) {
+						volumeLevel = VOLUME_STEPS-1;
 				}
 //				Log.d(TAG, "OUTPUT VOL: Diff20: " + diff20 + " sN: " + sN + " NumRotations: " + numRotations + " detectionErrors: " + detectionErrors + " VolumeLevel " + volumeLevel);
 				return getVolume();
@@ -184,6 +187,7 @@ public class VaavudVolumeAdjust {
 		}
 
 		private void returnToDiffState() {
+//				Log.d(TAG, "Return to Diff State");
 				volState = DIFF_STATE;
 				counter = 0;
 				sNVolume = new double[VOLUME_STEPS];

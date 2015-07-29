@@ -14,7 +14,6 @@ import android.os.Build;
 import android.os.Handler;
 import android.util.Log;
 import android.util.Pair;
-import android.widget.Toast;
 
 import com.vaavud.sleipnirSDK.algorithm.VaavudAudioProcessing;
 import com.vaavud.sleipnirSDK.algorithm.VaavudWindProcessing;
@@ -55,7 +54,7 @@ public class SleipnirSDKController implements AudioListener {
 		private final int N = 3; //Hz
 		private long initialTime;
 		private Float[] coefficients;
-		private Float playerVolume=1.0f;
+		private Float playerVolume = 1.0f;
 
 
 		private VaavudAudioPlaying audioPlayer;
@@ -74,7 +73,7 @@ public class SleipnirSDKController implements AudioListener {
 
 
 		public SleipnirSDKController(Context context, boolean calibrationMode, SpeedListener speedListener, SignalListener signalListener, Float[] coefficients, String fileName) {
-//		Log.d("SleipnirCoreController","Sleipnir Core Controller");
+//				Log.d(TAG, "Sleipnir Core Controller");
 				mContext = context;
 				mCalibrationMode = calibrationMode;
 				appContext = mContext.getApplicationContext();
@@ -106,9 +105,13 @@ public class SleipnirSDKController implements AudioListener {
 
 		public void startMeasuring() {
 //				Log.d(TAG, "Start Measuring");
-				playerVolume= preferences.getFloat("playerVolume",1.0f);
+				playerVolume = preferences.getFloat("playerVolume", 0.5f) + 0.01f;
 
 //				Log.d(TAG,"Player Volume: "+playerVolume);
+
+				myAudioManager = (AudioManager) mContext.getSystemService(Context.AUDIO_SERVICE);
+				int result = myAudioManager.requestAudioFocus(null, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE);
+
 				mSettingsContentObserver = new SettingsContentObserver(mContext, new Handler());
 				appContext.getContentResolver().registerContentObserver(android.provider.Settings.System.CONTENT_URI, true, mSettingsContentObserver);
 
@@ -128,12 +131,77 @@ public class SleipnirSDKController implements AudioListener {
 //				Log.d(TAG, "Player Status: " + player.getState());
 //				Log.d(TAG, "Recorder Status: " + recorder.getState());
 
-				myAudioManager = (AudioManager) mContext.getSystemService(Context.AUDIO_SERVICE);
+
 
 
 				myAudioManager.setMicrophoneMute(false);
 				isMeasuring = true;
 				resumeMeasuring();
+		}
+
+
+		private void resumeMeasuring() {
+
+				if (isMeasuring) {
+
+
+//				Log.d(TAG, "MyAudioManager result: " + result);
+//						if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+//								Toast.makeText(mContext, R.string.connection_toast, Toast.LENGTH_LONG).show();
+//								// Start playback.
+//						} else {
+//								Toast.makeText(mContext, R.string.permision_toast, Toast.LENGTH_LONG).show();
+//						}
+
+
+						final int maxVolume = myAudioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+
+						myAudioManager.setStreamVolume(AudioManager.STREAM_MUSIC, maxVolume, AudioManager.FLAG_REMOVE_SOUND_AND_VIBRATE);
+
+						int volume = myAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+
+						AlertDialog.Builder builder1 = new AlertDialog.Builder(mContext);
+						builder1.setTitle(appContext.getResources().getString(R.string.sound_disclaimer_title));
+						builder1.setMessage(appContext.getResources().getString(R.string.sound_disclaimer));
+						builder1.setCancelable(false);
+						builder1.setNeutralButton(appContext.getResources().getString(R.string.button_ok),
+										new DialogInterface.OnClickListener() {
+												public void onClick(DialogInterface dialog, int id) {
+														dialog.dismiss();
+														myAudioManager.setStreamVolume(AudioManager.STREAM_MUSIC, maxVolume, AudioManager.FLAG_REMOVE_SOUND_AND_VIBRATE);
+												}
+										});
+
+						AlertDialog alert = builder1.create();
+
+						if (volume < maxVolume) {
+//								Log.d("SleipnirCoreController", "Volume: " + volume + " " + maxVolume);
+								alert.show();
+						}
+						if (orientationSensorManager != null) {
+								orientationSensorManager = new OrientationSensorManagerSleipnir(mContext);
+						}
+						if (orientationSensorManager.isSensorAvailable()) {
+								orientationSensorManager.start();
+						}
+
+//						Log.d(TAG,"Player Volume: "+playerVolume);
+//						Log.d(TAG,"Filename: "+ mFileName);
+						audioPlayer = new VaavudAudioPlaying(player, mFileName, mCalibrationMode, playerVolume);
+						audioRecording = new VaavudAudioRecording(recorder, this, bufferSizeRecording);
+
+						vva = new VaavudVolumeAdjust(bufferSizeRecording, playerVolume);
+						vap = new VaavudAudioProcessing(bufferSizeRecording, mFileName, mCalibrationMode);
+						vwp = new VaavudWindProcessing(speedListener, signalListener, mCalibrationMode);
+
+						if (coefficients != null) {
+								vwp.setCoefficients(coefficients);
+						}
+
+						audioPlayer.start();
+						audioRecording.start();
+
+				}
 		}
 
 		public void stopMeasuring() {
@@ -166,79 +234,6 @@ public class SleipnirSDKController implements AudioListener {
 				}
 		}
 
-		private void resumeMeasuring() {
-
-				if (isMeasuring) {
-
-
-						int result = myAudioManager.requestAudioFocus(null, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE);
-//				Log.d(TAG, "MyAudioManager result: " + result);
-						if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-								Toast.makeText(mContext, R.string.connection_toast, Toast.LENGTH_LONG).show();
-								// Start playback.
-						} else {
-								Toast.makeText(mContext, R.string.permision_toast, Toast.LENGTH_LONG).show();
-						}
-
-						int volume = myAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
-						final int maxVolume = myAudioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
-
-						myAudioManager.setStreamVolume(AudioManager.STREAM_MUSIC, maxVolume, AudioManager.FLAG_REMOVE_SOUND_AND_VIBRATE);
-
-
-						AlertDialog.Builder builder1 = new AlertDialog.Builder(mContext);
-						builder1.setTitle(appContext.getResources().getString(R.string.sound_disclaimer_title));
-						builder1.setMessage(appContext.getResources().getString(R.string.sound_disclaimer));
-						builder1.setCancelable(false);
-						builder1.setNeutralButton(appContext.getResources().getString(R.string.button_ok),
-										new DialogInterface.OnClickListener() {
-												public void onClick(DialogInterface dialog, int id) {
-														dialog.dismiss();
-														myAudioManager.setStreamVolume(AudioManager.STREAM_MUSIC, maxVolume, AudioManager.FLAG_REMOVE_SOUND_AND_VIBRATE);
-												}
-										});
-
-						AlertDialog alert = builder1.create();
-
-						if (volume < maxVolume) {
-//								Log.d("SleipnirCoreController", "Volume: " + volume + " " + maxVolume);
-								alert.show();
-						}
-						if (orientationSensorManager!=null){
-								orientationSensorManager = new OrientationSensorManagerSleipnir(mContext);
-						}
-						if (orientationSensorManager.isSensorAvailable()) {
-								orientationSensorManager.start();
-						}
-
-//						Log.d(TAG,"Player Volume: "+playerVolume);
-//						Log.d(TAG,"Filename: "+ mFileName);
-						audioPlayer = new VaavudAudioPlaying(player, mFileName, mCalibrationMode, playerVolume);
-						audioRecording = new VaavudAudioRecording(recorder, this, bufferSizeRecording);
-
-						vva = new VaavudVolumeAdjust(bufferSizeRecording,playerVolume);
-						vap = new VaavudAudioProcessing(bufferSizeRecording, mFileName, mCalibrationMode);
-						vwp = new VaavudWindProcessing(speedListener, signalListener, mCalibrationMode);
-
-						if (coefficients!=null) {
-								vwp.setCoefficients(coefficients);
-						}
-
-						audioPlayer.start();
-						audioRecording.start();
-
-
-				}
-		}
-
-		public boolean isMeasuring(){
-				return isMeasuring;
-		}
-
-		public double getOrientationAngle() {
-				return orientationSensorManager.getAngle();
-		}
-
 		public void stopController() {
 
 				if (orientationSensorManager != null) {
@@ -250,6 +245,14 @@ public class SleipnirSDKController implements AudioListener {
 				if (recorder != null) recorder.release();
 				player = null;
 				recorder = null;
+		}
+
+		public boolean isMeasuring() {
+				return isMeasuring;
+		}
+
+		public double getOrientationAngle() {
+				return orientationSensorManager.getAngle();
 		}
 
 		@Override

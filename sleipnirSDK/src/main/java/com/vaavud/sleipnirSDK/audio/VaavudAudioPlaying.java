@@ -30,20 +30,6 @@ public class VaavudAudioPlaying extends Thread {
 				mFileName = fileName;
 				mCalibrationMode = calibrationMode;
 
-				if (playerVolume == null) {
-						playerVolume = AudioTrack.getMaxVolume();
-				}
-
-				if (mPlayer != null && mPlayer.getState() != AudioTrack.STATE_UNINITIALIZED && mPlayer.getPlayState() == AudioTrack.PLAYSTATE_PLAYING) {
-						mPlayer.stop();
-				}
-
-				if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.LOLLIPOP) {
-						mPlayer.setStereoVolume(playerVolume, playerVolume);
-				} else {
-						mPlayer.setVolume(playerVolume);
-				}
-
 				offset = Math.PI;
 
 				for (int i = 0; i < numSamples * 2; i = i + 2) {
@@ -64,6 +50,18 @@ public class VaavudAudioPlaying extends Thread {
 						}
 						os = null;
 				}
+
+				if (mPlayer != null && mPlayer.getState() != AudioTrack.STATE_UNINITIALIZED && mPlayer.getPlayState() == AudioTrack.PLAYSTATE_PLAYING) {
+						mPlayer.stop();
+				}
+
+				if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.LOLLIPOP) {
+						Log.d(TAG,"Set Stereo Volume: "+playerVolume);
+						mPlayer.setStereoVolume(playerVolume, playerVolume);
+				} else {
+						Log.d(TAG,"SetVolume: "+playerVolume);
+						mPlayer.setVolume(playerVolume);
+				}
 		}
 
 		@Override
@@ -71,7 +69,7 @@ public class VaavudAudioPlaying extends Thread {
 				isPlaying = true;
 				if (mPlayer.getState() == AudioTrack.STATE_INITIALIZED) {
 						mPlayer.play();
-						while (isPlaying) {
+						while (isPlaying && mPlayer!=null) {
 								if (sample != null) {
 										mPlayer.write(sample, 0, sample.length);
 								}
@@ -87,13 +85,13 @@ public class VaavudAudioPlaying extends Thread {
 		 * Called from outside of the thread in order to stop the playback loop
 		 */
 		public void close() {
-				isPlaying = false;
-				sample = null;
 				if (mPlayer != null && mPlayer.getState() == AudioTrack.PLAYSTATE_PLAYING) {
 						mPlayer.flush();
 						mPlayer.stop();
 						mPlayer.release();
 				}
+				isPlaying = false;
+				sample = null;
 		}
 
 		//convert short to byte
