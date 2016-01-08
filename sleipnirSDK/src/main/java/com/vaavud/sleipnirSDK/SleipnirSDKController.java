@@ -175,7 +175,7 @@ public class SleipnirSDKController implements AudioListener {
 
             vva = new VaavudVolumeAdjust(bufferSizeRecording, playerVolume);
             vap = new VaavudAudioProcessing(bufferSizeRecording, mFileName, mCalibrationMode);
-            vwp = new VaavudWindProcessing(speedListener, signalListener, mCalibrationMode);
+            vwp = new VaavudWindProcessing(speedListener, signalListener);
 
             audioPlayer.start();
             audioRecording.start();
@@ -240,17 +240,14 @@ public class SleipnirSDKController implements AudioListener {
         if (signalListener != null) signalListener.signalChanged(audioBuffer);
 
         if (audioBuffer != null) {
-//						Log.d("SleipnirSDKController","New Audio Buffer");
             Pair<Integer, Double> noise = vva.noiseEstimator(audioBuffer);
             Pair<List<Integer>, Long> samplesResult = vap.processSamples(audioBuffer);
             for (int i = 0; i < samplesResult.first.size(); i++) {
-//								Log.d(TAG,"Tick Value: "+samplesResult.first.get(i));
                 if (vwp.newTick(samplesResult.first.get(i))) numRotations++;
             }
             if (noise != null) {
                 int detectionErrors = vwp.getTickDetectionErrorCount();
                 playerVolume = vva.newVolume(noise.first, noise.second, numRotations, detectionErrors);
-//								Log.d(TAG,"Volume: "+playerVolume);
 
                 if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
                     player.setStereoVolume(playerVolume, playerVolume);

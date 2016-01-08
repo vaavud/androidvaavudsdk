@@ -10,17 +10,13 @@ import java.util.Date;
 public class VaavudWindProcessing {
 
     private static int ANGLE_ITERATIONS_PR_UPDATE = 3;
-    private static int REQUIRED_CALIBRATION_TICKS = 600;
     private static long UPDATE_INTERVAL = 200;//0.2F; // 5 times a second
     private static int ANGLE_CORRRECTION_COEFFICIENT = 100;
-    private static int ANGLE_DIFF = 1;
     private static int SMOOTHING_TIME_CONSTANT = 4;
-    private static int SMOOTHING_TIME_CONSTANT_CALIBRATION = 12;
     private static int TEETH_PR_REV = 15;
     private static int SAMPLE_FREQUENCY = 44100;
 
     private int startCounter;
-    private boolean mCalibrationMode;
 
     private int[] tickLengthBuffer = new int[TEETH_PR_REV];
     private int tickLengthOneRotation;
@@ -49,10 +45,6 @@ public class VaavudWindProcessing {
 
     private SpeedListener mSpeedListener;
     private SignalListener mSignalListener;
-
-    private Float[] originalCompensation = {1.02127659574468F, 1.02127659574468F, 1.02127659574468F, 1.02127659574468F, 1.02127659574468F,
-            1.02127659574468F, 1.02127659574468F, 1.02127659574468F, 1.02127659574468F, 1.02127659574468F, 1.02127659574468F,
-            1.02127659574468F, 1.02127659574468F, 1.02127659574468F, 0.774193548387097F};
 
     private Float[] compensation = {1.02127659574468F, 1.02127659574468F, 1.02127659574468F, 1.02127659574468F, 1.02127659574468F,
             1.02127659574468F, 1.02127659574468F, 1.02127659574468F, 1.02127659574468F, 1.02127659574468F, 1.02127659574468F,
@@ -89,19 +81,13 @@ public class VaavudWindProcessing {
             1.51316681498404F, 1.55000456748550F, 1.58529639518708F, 1.61900783540342F, 1.65110697646223F, 1.68156447603108F, 1.71035356279630F, 1.73745001850842F, 1.76283212588682F, 1.78648061977600F, 1.80837868058991F, 1.82851194497160F, 1.84686852509262F,
             1.86343902222370F, 1.87821647622575F, 1.89119628770111F, 1.90237616864563F, 1.91175616824101F, 1.91933872768542F, 1.92512873506254F, 1.92913358874019F, 1.93136328313521F, 1.93183048501708F};
 
-    private int tickLengthOneRotationLast;
-    private int calibrationTickSlowdownCounter;
-    private double[] tickLengthRelativePrTeethSum = new double[TEETH_PR_REV];
-    private int[] tickLengthRelativePrTeethCounter = new int[TEETH_PR_REV];
-    private int calibrationTickCounter;
     private int tickDetectionErrorCount;
     private float velocityProfileError;
 
 
-    public VaavudWindProcessing(SpeedListener speedListener, SignalListener signalListener, boolean calibrationMode) {
+    public VaavudWindProcessing(SpeedListener speedListener, SignalListener signalListener) {
         mSpeedListener = speedListener;
         mSignalListener = signalListener;
-        mCalibrationMode = calibrationMode;
 
         previousTickTime = 0;
         startLocated = false;
@@ -119,7 +105,6 @@ public class VaavudWindProcessing {
 
 
     private void locateStart(int samples) {
-//		Log.d("VaavudWindProcessing","Locale Start: "+samples);
         if (samples > 1.2 * lastTickLength && samples < 1.4 * lastTickLength) {
             if (startCounter == 2 * TEETH_PR_REV) {
                 startLocated = true;
@@ -148,7 +133,6 @@ public class VaavudWindProcessing {
             lastTickLength = tickLength;
             return false;
         }
-//				Log.d("VaavudWindProcessing","Located: "+tickLength);
 
         // check if new tick value is within 20% of expected value
         float tickLengthCompensated = tickLength * compensation[teethIndex];
@@ -163,17 +147,12 @@ public class VaavudWindProcessing {
 
         lastTickLengthCompensated = tickLengthCompensated;
 
-
-        if (teethIndex == TEETH_PR_REV - 1) return true;
-        else return false;
+        return (teethIndex == TEETH_PR_REV - 1);
 
     }
 
     private void processValidTick(int tickLength) {
-//		Log.d("VaavudWindProcessing","ProcessValidTick");
         tickCounterSinceStart++;
-
-        // update tickLenghtOneRotation
 
         // Moving Avg subtract
         tickLengthOneRotation -= tickLengthBuffer[teethIndex];
@@ -184,52 +163,13 @@ public class VaavudWindProcessing {
         // Moving Avg update SUM
         tickLengthOneRotation += tickLengthBuffer[teethIndex];
 
-
-        if (mCalibrationMode) {
-//						Log.d("VaavudWindProcessing", "Entering Calibration: "+ tickLengthOneRotation + " " + calibrationTickSlowdownCounter);
-            if (tickLengthOneRotation > tickLengthOneRotationLast) {
-                calibrationTickSlowdownCounter++;
-            } else {
-                calibrationTickSlowdownCounter = 0;
-            }
-            if (tickLengthOneRotation < 5000 && calibrationTickSlowdownCounter > 100 && tickLengthOneRotation > 2000) {
-                // Filter Calibration
-                if (!exponentialFilterInitialzed) {
-                    initializeExponentialFilter();
-
-                    // Mean Calibration
-//		        	Log.d("VaavudWindProcessing", "Mean Calibration");
-                    for (int i = 0; i < TEETH_PR_REV; i++) {
-//		            	Log.d("SleipnirSDK","Mean Calibration: "+i);
-                        tickLengthRelativePrTeethSum[i] = 0;
-                        tickLengthRelativePrTeethCounter[i] = 0;
-                    }
-                }
-
-                updateExponentialFilter();
-
-                // Average Calibration
-                double tickLengthRelative = tickLengthBuffer[teethProcessIndex] * TEETH_PR_REV / (double) tickLengthOneRotation;
-                tickLengthRelativePrTeethSum[teethProcessIndex] += tickLengthRelative;
-                tickLengthRelativePrTeethCounter[teethProcessIndex]++;
-                calibrationTickCounter++;
-
-//            Log.d("SleipnirSDK","tickLengthOneRotation: "+tickLengthOneRotation + " calibrationTickSlowdownCounter: "+calibrationTickSlowdownCounter);
-                if (calibrationTickCounter == REQUIRED_CALIBRATION_TICKS) {
-                    endCalibration();
-//										mSpeedListener.calibrationPercentageComplete(calibrationTickCounter / (float) REQUIRED_CALIBRATION_TICKS);
-                }
-//	            Log.d("VaavudWindProcessing","Previous Tick Time:" + previousTickTime);
-            }
-
-        } else {
-            if (tickCounterSinceStart == TEETH_PR_REV && exponentialFilterInitialzed) {
-                initializeExponentialFilter();
-            }
-            if (tickCounterSinceStart > TEETH_PR_REV) {
-                updateExponentialFilter();
-            }
+        if (tickCounterSinceStart == TEETH_PR_REV && exponentialFilterInitialzed) {
+            initializeExponentialFilter();
         }
+        if (tickCounterSinceStart > TEETH_PR_REV) {
+            updateExponentialFilter();
+        }
+
 
         // update results
         Date time = new Date();
@@ -246,13 +186,10 @@ public class VaavudWindProcessing {
         if (teethProcessIndex == TEETH_PR_REV) {
             teethProcessIndex = 0;
         }
-//	    Log.d("SleipnirSDK","TeethIndex: "+teethIndex);
-        tickLengthOneRotationLast = tickLengthOneRotation;
 
     }
 
     private void initializeExponentialFilter() {
-//		Log.d("SleipnirSDK","InitializeExponentialFilter: "+tickLengthOneRotation);
         for (int i = 0; i < TEETH_PR_REV; i++) {
             expTickLengthRelativePrTeeth[i] = tickLengthBuffer[i] * TEETH_PR_REV / (float) tickLengthOneRotation;
         }
@@ -261,15 +198,10 @@ public class VaavudWindProcessing {
 
     private void updateExponentialFilter() {
         // calculate relative tick length
-//		Log.d("SleipnirSDK","UpdateExponentialFilter: "+tickLengthOneRotation);
         float tickLengthRelative = tickLengthBuffer[teethProcessIndex] * TEETH_PR_REV / (float) tickLengthOneRotation;
 
         float a_smoothingFactor;
-        if (mCalibrationMode) {
-            a_smoothingFactor = 3 * tickLengthBuffer[teethProcessIndex] * TEETH_PR_REV / (float) (SMOOTHING_TIME_CONSTANT_CALIBRATION * SAMPLE_FREQUENCY);
-        } else {
-            a_smoothingFactor = 3 * tickLengthBuffer[teethProcessIndex] * TEETH_PR_REV / (float) (SMOOTHING_TIME_CONSTANT * SAMPLE_FREQUENCY);
-        }
+        a_smoothingFactor = 3 * tickLengthBuffer[teethProcessIndex] * TEETH_PR_REV / (float) (SMOOTHING_TIME_CONSTANT * SAMPLE_FREQUENCY);
 
         expTickLengthRelativePrTeeth[teethProcessIndex] = a_smoothingFactor * tickLengthRelative + (1 - a_smoothingFactor) * expTickLengthRelativePrTeeth[teethProcessIndex];
     }
@@ -280,42 +212,12 @@ public class VaavudWindProcessing {
             tickLengthBuffer[i] = 0;
         }
         tickLengthOneRotation = 0;
-        tickLengthOneRotationLast = 0;
         tickCounterSinceStart = 0;
         startLocated = false;
     }
 
-    private void endCalibration() {
-
-        if (calibrationTickCounter >= REQUIRED_CALIBRATION_TICKS) {
-            calculateMeanFilter();
-            // Exp Filter
-            mCalibrationMode = false;
-//						mSpeedListener.calibrationCoefficients(convertCoefficients(compensation));
-        }
-        resetDirectionAlgorithm();
-        exponentialFilterInitialzed = false;
-
-
-    }
-
-    private void calculateMeanFilter() {
-        // Mean Filter
-        float compensationSum = 0;
-        float[] tickLengthRelativePrTeethAvg = new float[TEETH_PR_REV];
-
-        for (int i = 0; i < TEETH_PR_REV; i++) {
-            tickLengthRelativePrTeethAvg[i] = (float) (tickLengthRelativePrTeethSum[i] / tickLengthRelativePrTeethCounter[i]);
-            compensationSum += tickLengthRelativePrTeethAvg[i];
-        }
-        double adjustmentRatio = TEETH_PR_REV / compensationSum;
-        for (int i = 0; i < TEETH_PR_REV; i++) {
-            compensation[i] = (float) (1 / (tickLengthRelativePrTeethAvg[i] * adjustmentRatio));
-        }
-    }
 
     private void updateUI() {
-//		Log.d("SleipnirSDK","UPDATE UI");
         // Calculate relative velocities
 
         float[] tickLengthRelativePrTeethCompensated = new float[TEETH_PR_REV];
@@ -329,12 +231,8 @@ public class VaavudWindProcessing {
         for (int i = 0; i < ANGLE_ITERATIONS_PR_UPDATE; i++) {
             iterateAngle(tickLengthRelativePrTeethCompensated);
         }
-        if (mCalibrationMode) {
-//	    	Log.d("SleipnirSDK","Calibration percentage: "+ calibrationTickCounter / (float) REQUIRED_CALIBRATION_TICKS);
-//						mSpeedListener.calibrationPercentageComplete(calibrationTickCounter / (float) REQUIRED_CALIBRATION_TICKS);
-        } else {
-            mSpeedListener.speedChanged(windSpeed, angleEstimator, new Date().getTime(), velocityProfileError);
-        }
+
+        mSpeedListener.speedChanged(windSpeed, angleEstimator, new Date().getTime(), velocityProfileError);
 
         if (mSignalListener != null) {
             float[] angleCurve = new float[15];
@@ -345,13 +243,6 @@ public class VaavudWindProcessing {
 
     }
 
-    public String getStringAvgAngularVelocities() {
-        String angularString = "";
-        for (int i = 0; i < TEETH_PR_REV; i++) {
-            angularString += i + ":" + tickLengthRelativePrTeethCompensated[i] + "\n";
-        }
-        return angularString;
-    }
 
     private void iterateAngle(float[] mvgRelativeSpeedPercent) {
 
@@ -445,8 +336,6 @@ public class VaavudWindProcessing {
         tickLengthBuffer = null;
         expTickLengthRelativePrTeeth = null;
         tickLengthRelativePrTeethCompensated = null;
-        tickLengthRelativePrTeethCounter = null;
-        tickLengthRelativePrTeethSum = null;
         tickEdgeAngle = null;
         compensation = null;
         fitcurve = null;
@@ -454,32 +343,6 @@ public class VaavudWindProcessing {
         mSpeedListener = null;
     }
 
-
-//		private Float[] convertCoefficients(Float[] compensation) {
-////				Log.d("SleipnirSDK", "Algo Compensation" + Arrays.toString(compensation));
-//				Float[] newCompensation = new Float[TEETH_PR_REV];
-//
-//				for (int i = 0; i < compensation.length; ++i) {
-//						newCompensation[i] = Float.valueOf((this.originalCompensation[i].floatValue() / compensation[i].floatValue() - 1.0F) * 100.0F);
-//				}
-//
-////				Log.d("SleipnirSDK", "DB Compensation" + Arrays.toString(newCompensation));
-//				return newCompensation;
-//		}
-//
-//		public void setCoefficients(Float[] coefficients) {
-////				Log.d("SleipnirSDK", "DB Compensation" + Arrays.toString(coefficients));
-//				if (!mCalibrationMode && coefficients != null) {
-//						Float[] newCompensation = new Float[TEETH_PR_REV];
-//
-//						for (int i = 0; i < coefficients.length; ++i) {
-//								newCompensation[i] = Float.valueOf(this.originalCompensation[i].floatValue() / (coefficients[i].floatValue() / 100.0F + 1.0F));
-//						}
-//
-////						Log.d("SleipnirSDK", "Algo Compensation" + Arrays.toString(newCompensation));
-//						System.arraycopy(newCompensation, 0, this.compensation, 0, newCompensation.length);
-//				}
-//		}
 
     public void resetDetectionErrors() {
         tickDetectionErrorCount = 0;
@@ -489,10 +352,4 @@ public class VaavudWindProcessing {
         return tickDetectionErrorCount;
     }
 
-
-//	private void printArray(Object[] array, String name){
-//		String vector = name+": ["+array[0];
-//        for (int i=1;i<expTickLengthRelativePrTeeth.length; i++) vector+=","+array[i];
-//        Log.d("SleipnirSDK",vector+"]");
-//	}
 }
