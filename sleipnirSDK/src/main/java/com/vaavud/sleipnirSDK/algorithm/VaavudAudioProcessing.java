@@ -1,12 +1,7 @@
 package com.vaavud.sleipnirSDK.algorithm;
 
 
-import android.util.Log;
 import android.util.Pair;
-
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,7 +13,6 @@ public class VaavudAudioProcessing {
     private int mvgAvgSum;
     private int[] mvgDiff = new int[3];
     private int mvgDiffSum;
-    private int lastValue;
     private double gapBlock;
     private long counter;
     private long lastTick;
@@ -31,26 +25,16 @@ public class VaavudAudioProcessing {
     private int diffMax;
     private int diffMin;
     private int lastDiffMax;
-    private int lastDiffMin;
-    private int diffGap;
     private int mvgGapMax;
     private int lastMvgGapMax;
     private int mvgDropHalf;
     private int diffRiseThreshold;
-    private boolean mCalibrationMode;
 
     //Buffer
     private short[] buffer;
 
-    private VaavudWindProcessing vwp = null;
 
-
-    public VaavudAudioProcessing() {
-        buffer = null;
-    }
-
-    public VaavudAudioProcessing(int bufferSizeRecording, String fileName, boolean calibrationMode) {
-        mCalibrationMode = calibrationMode;
+    public VaavudAudioProcessing(int bufferSizeRecording) {
 
         buffer = new short[bufferSizeRecording];
 
@@ -58,10 +42,8 @@ public class VaavudAudioProcessing {
         counter = 0;
         mvgAvgSum = 0;
         mvgDiffSum = 0;
-        lastValue = 0;
 
         lastDiffMax = Short.MAX_VALUE;
-        lastDiffMin = 0;
         lastMvgMax = Short.MAX_VALUE / 2;
         lastMvgMin = -Short.MAX_VALUE / 2;
         lastMvgGapMax = 0;
@@ -83,14 +65,14 @@ public class VaavudAudioProcessing {
         if (inputBuffer != null) {
 
             System.arraycopy(inputBuffer, 0, buffer, 0, inputBuffer.length);
-            List<Integer> samplesDistanceTick = new ArrayList<Integer>();
+            List<Integer> samplesDistanceTick = new ArrayList<>();
 
             int maxDiff = 0;
-            int currentSample = 0;
+            int currentSample;
 
             for (int i = 0; i < buffer.length; i++) {
-                int bufferIndex = (int) (mod(counter, 3));
-                int bufferIndexLast = (int) (mod(counter - 1, 3));
+                int bufferIndex = (mod(counter, 3));
+                int bufferIndexLast = (mod(counter - 1, 3));
 
                 // Moving Avg subtract
                 mvgAvgSum -= mvgAvg[bufferIndex];
@@ -115,7 +97,6 @@ public class VaavudAudioProcessing {
                     lastMvgMax = mvgMax;
                     lastMvgMin = mvgMin;
                     lastDiffMax = diffMax;
-                    lastDiffMin = diffMin;
                     lastMvgGapMax = mvgGapMax;
 
                     mvgMax = 0;
@@ -184,7 +165,7 @@ public class VaavudAudioProcessing {
             case 3:
                 if (sampleSinceTick > gapBlock) {
                     diffState = 4;
-                    diffGap = mvgDiffSum;
+                    int diffGap = mvgDiffSum;
                     mvgGapMax = mvgAvgSum;
                     diffRiseThreshold = (int) (diffGap + 0.1 * (lastDiffMax - diffGap));
                     mvgDropHalf = (lastMvgGapMax - mvgMin) / 2;
@@ -236,7 +217,6 @@ public class VaavudAudioProcessing {
         lastMvgMax = Short.MAX_VALUE / 2;
         lastMvgMin = -Short.MAX_VALUE / 2;
         lastDiffMax = Short.MAX_VALUE;
-        lastDiffMin = 0;
         lastMvgGapMax = 0;
     }
 
@@ -244,19 +224,6 @@ public class VaavudAudioProcessing {
         buffer = null;
         mvgAvg = null;
         mvgDiff = null;
-    }
-
-    //convert short to byte
-    private byte[] short2byte(short[] sData) {
-        int shortArrsize = sData.length;
-        byte[] bytes = new byte[shortArrsize * 2];
-        for (int i = 0; i < shortArrsize; i++) {
-            bytes[i * 2] = (byte) (sData[i] & 0x00FF);
-            bytes[(i * 2) + 1] = (byte) (sData[i] >> 8);
-            sData[i] = 0;
-        }
-        return bytes;
-
     }
 
     private int mod(long l, int y) {

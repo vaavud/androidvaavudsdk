@@ -1,7 +1,5 @@
 package com.vaavud.sleipnirSDK.algorithm;
 
-import android.util.Log;
-
 import com.vaavud.sleipnirSDK.listener.SignalListener;
 import com.vaavud.sleipnirSDK.listener.SpeedListener;
 
@@ -21,7 +19,6 @@ public class VaavudWindProcessing {
     private int[] tickLengthBuffer = new int[TEETH_PR_REV];
     private int tickLengthOneRotation;
     private float[] expTickLengthRelativePrTeeth = new float[TEETH_PR_REV];
-    private float[] tickLengthRelativePrTeethCompensated = new float[TEETH_PR_REV];
 
     private boolean startLocated;
     private boolean exponentialFilterInitialzed;
@@ -335,7 +332,6 @@ public class VaavudWindProcessing {
     public void close() {
         tickLengthBuffer = null;
         expTickLengthRelativePrTeeth = null;
-        tickLengthRelativePrTeethCompensated = null;
         tickEdgeAngle = null;
         compensation = null;
         fitcurve = null;
