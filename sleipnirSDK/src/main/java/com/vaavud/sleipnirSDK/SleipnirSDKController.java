@@ -105,7 +105,6 @@ public class SleipnirSDKController implements AudioListener {
         Log.d(TAG, "Player Volume: " + playerVolume);
 
         myAudioManager = (AudioManager) mContext.getSystemService(Context.AUDIO_SERVICE);
-        int result = myAudioManager.requestAudioFocus(null, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE);
 
         mSettingsContentObserver = new SettingsContentObserver(mContext, new Handler());
         appContext.getContentResolver().registerContentObserver(android.provider.Settings.System.CONTENT_URI, true, mSettingsContentObserver);
@@ -158,7 +157,6 @@ public class SleipnirSDKController implements AudioListener {
             AlertDialog alert = builder1.create();
 
             if (volume < maxVolume) {
-//								Log.d("SleipnirCoreController", "Volume: " + volume + " " + maxVolume);
                 alert.show();
             }
             if (orientationSensorManager != null) {
@@ -168,13 +166,11 @@ public class SleipnirSDKController implements AudioListener {
                 orientationSensorManager.start();
             }
 
-//						Log.d(TAG,"Player Volume: "+playerVolume);
-//						Log.d(TAG,"Filename: "+ mFileName);
             audioPlayer = new VaavudAudioPlaying(player, mFileName, mCalibrationMode, playerVolume);
             audioRecording = new VaavudAudioRecording(recorder, this, bufferSizeRecording);
 
             vva = new VaavudVolumeAdjust(bufferSizeRecording, playerVolume);
-            vap = new VaavudAudioProcessing(bufferSizeRecording, mFileName, mCalibrationMode);
+            vap = new VaavudAudioProcessing(bufferSizeRecording);
             vwp = new VaavudWindProcessing(speedListener, signalListener);
 
             audioPlayer.start();
@@ -184,7 +180,6 @@ public class SleipnirSDKController implements AudioListener {
     }
 
     public void stopMeasuring() {
-//				Log.d("SleipnirCoreController", "Stop Measuring");
         pauseMeasuring();
         isMeasuring = false;
         SharedPreferences.Editor editor = preferences.edit();
@@ -196,8 +191,6 @@ public class SleipnirSDKController implements AudioListener {
 
     private void pauseMeasuring() {
         if (isMeasuring) {
-
-//						Log.d(TAG, "Pause Measuring");
             if (audioPlayer != null) audioPlayer.close();
             if (audioRecording != null) audioRecording.close();
 
@@ -209,7 +202,6 @@ public class SleipnirSDKController implements AudioListener {
             }
             myAudioManager.abandonAudioFocus(null);
             //Object and thread destroying
-
         }
     }
 
