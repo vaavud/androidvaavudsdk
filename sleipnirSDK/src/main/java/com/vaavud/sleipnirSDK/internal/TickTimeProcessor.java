@@ -1,11 +1,11 @@
-package com.vaavud.sleipnirSDK.algorithm;
+package com.vaavud.sleipnirSDK.internal;
 
 import com.vaavud.sleipnirSDK.listener.SignalListener;
 import com.vaavud.sleipnirSDK.listener.SpeedListener;
 
 import java.util.Date;
 
-public class VaavudWindProcessing {
+public class TickTimeProcessor {
 
     private static int ANGLE_ITERATIONS_PR_UPDATE = 3;
     private static long UPDATE_INTERVAL = 200;//0.2F; // 5 times a second
@@ -82,7 +82,7 @@ public class VaavudWindProcessing {
     private float velocityProfileError;
 
 
-    public VaavudWindProcessing(SpeedListener speedListener, SignalListener signalListener) {
+    public TickTimeProcessor(SpeedListener speedListener, SignalListener signalListener) {
         mSpeedListener = speedListener;
         mSignalListener = signalListener;
 

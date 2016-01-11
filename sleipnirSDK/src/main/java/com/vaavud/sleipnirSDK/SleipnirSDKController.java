@@ -15,8 +15,8 @@ import android.os.Handler;
 import android.util.Log;
 import android.util.Pair;
 
-import com.vaavud.sleipnirSDK.algorithm.VaavudAudioProcessing;
-import com.vaavud.sleipnirSDK.algorithm.VaavudWindProcessing;
+import com.vaavud.sleipnirSDK.internal.AudioSampleProcessor;
+import com.vaavud.sleipnirSDK.internal.TickTimeProcessor;
 import com.vaavud.sleipnirSDK.audio.VaavudAudioPlaying;
 import com.vaavud.sleipnirSDK.audio.VaavudAudioRecording;
 import com.vaavud.sleipnirSDK.audio.VaavudVolumeAdjust;
@@ -59,8 +59,8 @@ public class SleipnirSDKController implements AudioListener {
 
     private VaavudAudioPlaying audioPlayer;
     private VaavudAudioRecording audioRecording;
-    private VaavudAudioProcessing vap;
-    private VaavudWindProcessing vwp;
+    private AudioSampleProcessor vap;
+    private TickTimeProcessor vwp;
     private VaavudVolumeAdjust vva;
     private String mFileName;
     public SpeedListener speedListener;
@@ -170,8 +170,8 @@ public class SleipnirSDKController implements AudioListener {
             audioRecording = new VaavudAudioRecording(recorder, this, bufferSizeRecording);
 
             vva = new VaavudVolumeAdjust(bufferSizeRecording, playerVolume);
-            vap = new VaavudAudioProcessing(bufferSizeRecording);
-            vwp = new VaavudWindProcessing(speedListener, signalListener);
+            vap = new AudioSampleProcessor(bufferSizeRecording);
+            vwp = new TickTimeProcessor(speedListener, signalListener);
 
             audioPlayer.start();
             audioRecording.start();

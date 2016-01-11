@@ -1,11 +1,11 @@
-package com.vaavud.sleipnirSDK.algorithm;
+package com.vaavud.sleipnirSDK.internal;
 
 
 import android.util.Pair;
 import java.util.ArrayList;
 import java.util.List;
 
-public class VaavudAudioProcessing {
+public class AudioSampleProcessor {
 
     private static final String TAG = "SDK:AudioProcessing";
     //Sound processing
@@ -34,7 +34,7 @@ public class VaavudAudioProcessing {
     private short[] buffer;
 
 
-    public VaavudAudioProcessing(int bufferSizeRecording) {
+    public AudioSampleProcessor(int bufferSizeRecording) {
 
         buffer = new short[bufferSizeRecording];
 
