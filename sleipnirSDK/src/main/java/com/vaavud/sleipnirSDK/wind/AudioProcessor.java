@@ -1,13 +1,12 @@
-package com.vaavud.sleipnirSDK.internal;
+package com.vaavud.sleipnirSDK.wind;
 
 
-import android.util.Pair;
-import java.util.ArrayList;
-import java.util.List;
+public class AudioProcessor {
 
-public class AudioSampleProcessor {
+//    private static final String TAG = "SDK:AudioProcessing";
 
-    private static final String TAG = "SDK:AudioProcessing";
+    private TickReceiver receiver;
+
     //Sound processing
     private int[] mvgAvg = new int[3];
     private int mvgAvgSum;
@@ -15,7 +14,7 @@ public class AudioSampleProcessor {
     private int mvgDiffSum;
     private double gapBlock;
     private long counter;
-    private long lastTick;
+    private long timeLast;
     private short mvgState;
     private short diffState;
     private int mvgMax;
@@ -30,12 +29,11 @@ public class AudioSampleProcessor {
     private int mvgDropHalf;
     private int diffRiseThreshold;
 
-    //Buffer
     private short[] buffer;
 
 
-    public AudioSampleProcessor(int bufferSizeRecording) {
-
+    public AudioProcessor(TickReceiver receiver, int bufferSizeRecording) {
+        this.receiver = receiver;
         buffer = new short[bufferSizeRecording];
 
         //SoundProcessing Init
@@ -47,7 +45,7 @@ public class AudioSampleProcessor {
         lastMvgMax = Short.MAX_VALUE / 2;
         lastMvgMin = -Short.MAX_VALUE / 2;
         lastMvgGapMax = 0;
-        lastTick = 0;
+        timeLast = 0;
 
         mvgMax = 0;
         mvgMin = 0;
@@ -60,60 +58,57 @@ public class AudioSampleProcessor {
     }
 
 
-    public Pair<List<Integer>, Long> processSamples(short[] inputBuffer) {
+    public void processSamples(long timeStamp, short[] inputBuffer) {
+        if (inputBuffer == null) return;
 
-        if (inputBuffer != null) {
+        System.arraycopy(inputBuffer, 0, buffer, 0, inputBuffer.length);
 
-            System.arraycopy(inputBuffer, 0, buffer, 0, inputBuffer.length);
-            List<Integer> samplesDistanceTick = new ArrayList<>();
+        int maxDiff = 0;
+        int currentSample;
 
-            int maxDiff = 0;
-            int currentSample;
+        for (int i = 0; i < buffer.length; i++) {
+            int bufferIndex = (mod(counter, 3));
+            int bufferIndexLast = (mod(counter - 1, 3));
 
-            for (int i = 0; i < buffer.length; i++) {
-                int bufferIndex = (mod(counter, 3));
-                int bufferIndexLast = (mod(counter - 1, 3));
+            // Moving Avg subtract
+            mvgAvgSum -= mvgAvg[bufferIndex];
+            // Moving Diff subtrack
+            mvgDiffSum -= mvgDiff[bufferIndex];
 
-                // Moving Avg subtract
-                mvgAvgSum -= mvgAvg[bufferIndex];
-                // Moving Diff subtrack
-                mvgDiffSum -= mvgDiff[bufferIndex];
+            currentSample = buffer[i];
 
-                currentSample = buffer[i];
+            // Moving Diff Update buffer value
+            mvgDiff[bufferIndex] = Math.abs(currentSample - mvgAvg[bufferIndexLast]); // ! need to use old mvgAvgValue so place before mvgAvg update
+            // Moving avg Update buffer value
+            mvgAvg[bufferIndex] = currentSample;
 
-                // Moving Diff Update buffer value
-                mvgDiff[bufferIndex] = Math.abs(currentSample - mvgAvg[bufferIndexLast]); // ! need to use old mvgAvgValue so place before mvgAvg update
-                // Moving avg Update buffer value
-                mvgAvg[bufferIndex] = currentSample;
+            // Moving Avg update SUM
+            mvgAvgSum += mvgAvg[bufferIndex];
+            mvgDiffSum += mvgDiff[bufferIndex];
 
-                // Moving Avg update SUM
-                mvgAvgSum += mvgAvg[bufferIndex];
-                mvgDiffSum += mvgDiff[bufferIndex];
+            if (maxDiff < mvgDiffSum)
+                maxDiff = mvgDiffSum;
 
-                if (maxDiff < mvgDiffSum)
-                    maxDiff = mvgDiffSum;
+            int time = (int) (counter - timeLast);
 
-                if (detectTick((int) (counter - lastTick))) {
-                    lastMvgMax = mvgMax;
-                    lastMvgMin = mvgMin;
-                    lastDiffMax = diffMax;
-                    lastMvgGapMax = mvgGapMax;
+            if (detectTick(time)) {
+                lastMvgMax = mvgMax;
+                lastMvgMin = mvgMin;
+                lastDiffMax = diffMax;
+                lastMvgGapMax = mvgGapMax;
 
-                    mvgMax = 0;
-                    mvgMin = 0;
-                    diffMax = 0;
-                    diffMin = 6 * Short.MAX_VALUE;
-                    mvgState = 0;
-                    diffState = 0;
-                    samplesDistanceTick.add((int) (counter - lastTick));
-                    lastTick = counter;
-                }
-                counter++;
+                mvgMax = 0;
+                mvgMin = 0;
+                diffMax = 0;
+                diffMin = 6 * Short.MAX_VALUE;
+                mvgState = 0;
+                diffState = 0;
+
+                receiver.newTick(new Tick(timeStamp + i, time));
+                timeLast = counter;
             }
-
-            return Pair.create(samplesDistanceTick, (counter - lastTick));
+            counter++;
         }
-        return null;
     }
 
     private boolean detectTick(int sampleSinceTick) {
@@ -192,19 +187,14 @@ public class AudioSampleProcessor {
             diffMin = mvgDiffSum;
 
         if (sampleSinceTick == 6000) {
-            lastTick = counter;
-//	    	Log.d(TAG, "Reset State machine: "+sampleSinceTick);
+            timeLast = counter;
             resetStateMachine();
         }
 
         return false;
-
-
     }
 
     private void resetStateMachine() {
-//		Log.d(TAG, "ResetStateMachine");
-
         mvgState = 0;
         diffState = 0;
         gapBlock = 0;

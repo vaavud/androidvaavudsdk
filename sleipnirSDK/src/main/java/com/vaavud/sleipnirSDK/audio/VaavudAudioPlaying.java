@@ -25,10 +25,9 @@ public class VaavudAudioPlaying extends Thread {
 		private String mFileName;
 		private FileOutputStream os;
 
-		public VaavudAudioPlaying(AudioTrack player, String fileName, boolean calibrationMode, Float playerVolume) {
+		public VaavudAudioPlaying(AudioTrack player, String fileName, Float playerVolume) {
 				mPlayer = player;
 				mFileName = fileName;
-				mCalibrationMode = calibrationMode;
 
 				offset = Math.PI;
 
