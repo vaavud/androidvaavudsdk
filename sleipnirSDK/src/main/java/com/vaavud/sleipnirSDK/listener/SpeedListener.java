@@ -1,6 +1,8 @@
 package com.vaavud.sleipnirSDK.listener;
 
+import com.vaavud.sleipnirSDK.model.SpeedEvent;
+
 public interface SpeedListener {
 
-    public void speedChanged(float speed, float windDirection, long timestamp, float velocityProfileError);
+    public void speedChanged(SpeedEvent event);
 }

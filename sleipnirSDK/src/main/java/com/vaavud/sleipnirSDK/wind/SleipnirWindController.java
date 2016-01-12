@@ -24,6 +24,7 @@ import com.vaavud.sleipnirSDK.audio.VaavudVolumeAdjust;
 import com.vaavud.sleipnirSDK.listener.AudioListener;
 import com.vaavud.sleipnirSDK.listener.SignalListener;
 import com.vaavud.sleipnirSDK.listener.SpeedListener;
+import com.vaavud.sleipnirSDK.model.SpeedEvent;
 
 class Tick {
     public final long time;
@@ -77,6 +78,7 @@ interface DirectionReceiver {
 }
 
 
+
 public class SleipnirWindController implements AudioListener, RotationReceiver, DirectionReceiver {
 
     private static final String TAG = "SDK:Controller";
@@ -123,6 +125,9 @@ public class SleipnirWindController implements AudioListener, RotationReceiver, 
     private int numRotations = 0;
 
     private SharedPreferences preferences;
+
+    private Throttle throttleSpeed = new Throttle(500);
+
 
 
     public SleipnirWindController(Context context) {
@@ -173,7 +178,7 @@ public class SleipnirWindController implements AudioListener, RotationReceiver, 
         myAudioManager.setMicrophoneMute(false);
         isMeasuring = true;
 
-        startTime = System.nanoTime()/ 1000;
+        startTime = System.currentTimeMillis();
         sampleCounter = 0;
 
         resumeMeasuring();
@@ -221,7 +226,6 @@ public class SleipnirWindController implements AudioListener, RotationReceiver, 
             rotationProcessor = new RotationProcessor(this);
             tickProcessor = new TickProcessor(this);
             audioProcessor = new AudioProcessor(tickProcessor, bufferSizeRecording);
-
 
             audioPlayer.start();
             audioRecording.start();
@@ -302,12 +306,19 @@ public class SleipnirWindController implements AudioListener, RotationReceiver, 
         sampleCounter += audioBuffer.length;
     }
 
+    private float windspeed(float freq) {
+        return freq > 0 ? freq*0.325f + 0.2f : 0f;
+    }
+
     @Override
     public void newRotation(Rotation rotation) {
 
         // send to upwards
-
-
+        if (speedListener != null) {
+            float windspeed = windspeed(sampleRate/(float) rotation.timeOneRotation);
+            long eventTime = startTime + (int) (1000*rotation.time/(float) sampleRate);
+            if (throttleSpeed.shouldSend(eventTime)) speedListener.speedChanged(new SpeedEvent(eventTime, windspeed));
+        }
     }
 
     @Override
