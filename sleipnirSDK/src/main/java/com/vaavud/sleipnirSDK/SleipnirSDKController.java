@@ -144,16 +144,6 @@ public class SleipnirSDKController implements AudioListener {
 
 				if (isMeasuring) {
 
-
-//				Log.d(TAG, "MyAudioManager result: " + result);
-//						if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-//								Toast.makeText(mContext, R.string.connection_toast, Toast.LENGTH_LONG).show();
-//								// Start playback.
-//						} else {
-//								Toast.makeText(mContext, R.string.permision_toast, Toast.LENGTH_LONG).show();
-//						}
-
-
 						final int maxVolume = myAudioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
 
 						myAudioManager.setStreamVolume(AudioManager.STREAM_MUSIC, maxVolume, AudioManager.FLAG_REMOVE_SOUND_AND_VIBRATE);
@@ -178,7 +168,7 @@ public class SleipnirSDKController implements AudioListener {
 //								Log.d("SleipnirCoreController", "Volume: " + volume + " " + maxVolume);
 								alert.show();
 						}
-						if (orientationSensorManager != null) {
+						if (orientationSensorManager == null) {
 								orientationSensorManager = new OrientationSensorManagerSleipnir(mContext);
 						}
 						if (orientationSensorManager.isSensorAvailable()) {
@@ -249,6 +239,10 @@ public class SleipnirSDKController implements AudioListener {
 
 		public boolean isMeasuring() {
 				return isMeasuring;
+		}
+
+		public boolean isOrientationAvailable(){
+				return orientationSensorManager.isSensorAvailable();
 		}
 
 		public double getOrientationAngle() {

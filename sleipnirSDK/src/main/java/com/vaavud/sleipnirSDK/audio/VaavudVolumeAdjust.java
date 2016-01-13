@@ -3,6 +3,7 @@ package com.vaavud.sleipnirSDK.audio;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 //import android.util.Log;
+import android.util.Log;
 import android.util.Pair;
 
 import java.util.ArrayList;
@@ -59,6 +60,7 @@ public class VaavudVolumeAdjust {
 						volState = STEEPESTASCENT_STATE;
 				}
 				buffer = new short[audioBufferSize];
+//				Log.d(TAG,"Buffer Size: "+AudioRecord.getMinBufferSize(sampleRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT));
 				skipSamples = (int) (AudioRecord.getMinBufferSize(sampleRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT) * 2);
 				samplesPerBuffer = (int) (0.01f * audioBufferSize);
 		}
@@ -91,7 +93,12 @@ public class VaavudVolumeAdjust {
 		}
 
 		public float newVolume(int diff20, double sN, int numRotations, int detectionErrors) {
-//				Log.d(TAG,"VolState: "+ volState);
+//
+//				if (diff20<NOISE_THRESHOLD){
+//						volumeLevel +=10;
+//										Log.d(TAG,"VolumeLevel: "+ volumeLevel);
+//						return volumeLevel/100;
+//				}
 				volumeCounter++;
 				float volumeChange = 0.0f;
 				if (sN > 6 && numRotations >= 1) {
@@ -173,8 +180,8 @@ public class VaavudVolumeAdjust {
 								}
 				}
 
-				if (volumeLevel < 0) {
-						volumeLevel = 0;
+				if (volumeLevel < 5) {
+						volumeLevel = 5;
 				} else if (volumeLevel > VOLUME_STEPS-1) {
 						volumeLevel = VOLUME_STEPS-1;
 				}

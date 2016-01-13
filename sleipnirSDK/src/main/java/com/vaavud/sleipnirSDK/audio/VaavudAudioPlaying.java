@@ -56,10 +56,10 @@ public class VaavudAudioPlaying extends Thread {
 				}
 
 				if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.LOLLIPOP) {
-						Log.d(TAG,"Set Stereo Volume: "+playerVolume);
+//						Log.d(TAG,"Set Stereo Volume: "+playerVolume);
 						mPlayer.setStereoVolume(playerVolume, playerVolume);
 				} else {
-						Log.d(TAG,"SetVolume: "+playerVolume);
+//						Log.d(TAG,"SetVolume: "+playerVolume);
 						mPlayer.setVolume(playerVolume);
 				}
 		}
