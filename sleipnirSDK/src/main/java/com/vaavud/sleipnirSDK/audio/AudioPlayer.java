@@ -1,15 +1,13 @@
 package com.vaavud.sleipnirSDK.audio;
 
 import android.media.AudioTrack;
-import android.util.Log;
 
 import java.io.FileOutputStream;
-import java.io.IOException;
 
 
-public class VaavudAudioPlaying extends Thread {
+public class AudioPlayer extends Thread {
 
-		private static final String TAG = "SDK:AudioPlaying";
+		private static final String TAG = "SDK:AudioPlayer";
 
 		private AudioTrack mPlayer;
 		private double offset;
@@ -21,13 +19,10 @@ public class VaavudAudioPlaying extends Thread {
 		private short sample[] = new short[numSamples * 2];
 		private final double freqOfTone = 14700; // hz
 
-		private boolean mCalibrationMode = false;
-		private String mFileName;
 		private FileOutputStream os;
 
-		public VaavudAudioPlaying(AudioTrack player, String fileName, Float playerVolume) {
+		public AudioPlayer(AudioTrack player) {
 				mPlayer = player;
-				mFileName = fileName;
 
 				offset = Math.PI;
 
@@ -36,30 +31,8 @@ public class VaavudAudioPlaying extends Thread {
 						sample[i + 1] = (short) ((Math.sin((2 * Math.PI * i / (sampleRate / freqOfTone)) + offset) * Short.MAX_VALUE));
 				}
 
-				if (mCalibrationMode) {
-
-						String filePath = fileName;
-//		    Log.d(TAG, "FilePath: "+filePath);
-						try {
-								os = new FileOutputStream(filePath + ".play");
-								os.write(short2byte(sample));
-								os.close();
-						} catch (IOException e) {
-								e.printStackTrace();
-						}
-						os = null;
-				}
-
 				if (mPlayer != null && mPlayer.getState() != AudioTrack.STATE_UNINITIALIZED && mPlayer.getPlayState() == AudioTrack.PLAYSTATE_PLAYING) {
-						mPlayer.stop();
-				}
-
-				if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.LOLLIPOP) {
-						Log.d(TAG,"Set Stereo Volume: "+playerVolume);
-						mPlayer.setStereoVolume(playerVolume, playerVolume);
-				} else {
-						Log.d(TAG,"SetVolume: "+playerVolume);
-						mPlayer.setVolume(playerVolume);
+					mPlayer.stop();
 				}
 		}
 
@@ -73,11 +46,9 @@ public class VaavudAudioPlaying extends Thread {
 										mPlayer.write(sample, 0, sample.length);
 								}
 						}
-//	        Log.d(TAG, "Stop");
 				}else{
 //						Log.d(TAG, "Player not Initialized " + mPlayer.getState());
 				}
-
 		}
 
 		/**

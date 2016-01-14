@@ -6,8 +6,8 @@ import android.util.Log;
 import com.vaavud.sleipnirSDK.listener.AudioListener;
 
 
-public class VaavudAudioRecording extends Thread {
-    private static final String TAG = "SDK:AudioRecording";
+public class AudioRecorder extends Thread {
+    private static final String TAG = "SDK:AudioRecorder";
 
     private boolean stopped = false;
     private AudioListener mAudioListener = null;
@@ -20,7 +20,7 @@ public class VaavudAudioRecording extends Thread {
     /**
      * Give the thread high priority so that it's not canceled unexpectedly, and start it
      */
-    public VaavudAudioRecording(AudioRecord recorder, AudioListener audioListener, int bufferSizeRecording) {
+    public AudioRecorder(AudioRecord recorder, AudioListener audioListener, int bufferSizeRecording) {
         android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_URGENT_AUDIO);
         mAudioListener = audioListener;
         mRecorder = recorder;

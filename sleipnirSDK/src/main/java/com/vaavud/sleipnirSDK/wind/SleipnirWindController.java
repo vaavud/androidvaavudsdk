@@ -13,14 +13,13 @@ import android.media.MediaRecorder;
 import android.os.Build;
 import android.os.Handler;
 import android.util.Log;
-import android.util.Pair;
 
 import com.vaavud.sleipnirSDK.OrientationSensorManagerSleipnir;
 import com.vaavud.sleipnirSDK.R;
 import com.vaavud.sleipnirSDK.SettingsContentObserver;
-import com.vaavud.sleipnirSDK.audio.VaavudAudioPlaying;
-import com.vaavud.sleipnirSDK.audio.VaavudAudioRecording;
-import com.vaavud.sleipnirSDK.audio.VaavudVolumeAdjust;
+import com.vaavud.sleipnirSDK.audio.AudioPlayer;
+import com.vaavud.sleipnirSDK.audio.AudioRecorder;
+import com.vaavud.sleipnirSDK.audio.VolumeAdjust;
 import com.vaavud.sleipnirSDK.listener.AudioListener;
 import com.vaavud.sleipnirSDK.listener.SignalListener;
 import com.vaavud.sleipnirSDK.listener.SpeedListener;
@@ -81,9 +80,7 @@ interface DirectionReceiver {
 
 public class SleipnirWindController implements AudioListener, RotationReceiver, DirectionReceiver {
 
-    private static final String TAG = "SDK:Controller";
-    private static final String KEY_CALIBRATION_COEFFICENTS = "calibrationCoefficients";
-    private static final String KEY_PLAYER_VOLUME = "playerVolume";
+    private static final String TAG = "SDK:SleipnirWC";
 
     private Context mContext;
     private Context appContext;
@@ -95,47 +92,34 @@ public class SleipnirWindController implements AudioListener, RotationReceiver, 
     private AudioRecord recorder;
     private AudioTrack player;
 
-    private final int duration = 1; // seconds
     private final int sampleRate = 44100; //Hz
-    private final int numSamples = duration * sampleRate;
-    private int bufferSizeRecording = 512;
-    private int minBufferSizeRecording;
-
-    private final int N = 3; //Hz
+    private int processBufferSize = 512;
+    private int audioBufferSize;
 
     private long startTime;
     private long sampleCounter;
 
 
     private Float[] coefficients;
-    private Float playerVolume = 1.0f;
 
-
-    private VaavudAudioPlaying audioPlayer;
-    private VaavudAudioRecording audioRecording;
+    private AudioPlayer audioPlayer;
+    private AudioRecorder audioRecorder;
     private AudioProcessor audioProcessor;
     private TickProcessor tickProcessor;
     private RotationProcessor rotationProcessor;
-    private VaavudVolumeAdjust vaavudVolumeAdjust;
-    private String mFileName;
+    private VolumeAdjust volumeAdjust;
     public SpeedListener speedListener;
     public SignalListener signalListener;
 
     private SettingsContentObserver mSettingsContentObserver;
-    private int numRotations = 0;
-
     private SharedPreferences preferences;
 
-    private Throttle throttleSpeed = new Throttle(500);
-
-
+    private Throttle throttleSpeed = new Throttle(200);
 
     public SleipnirWindController(Context context) {
-        Log.d(TAG, "Sleipnir Core Controller");
         mContext = context;
         appContext = mContext.getApplicationContext();
         preferences = appContext.getSharedPreferences("SleipnirSDKPreferences", Context.MODE_PRIVATE);
-        mFileName = "filename";
         startController();
     }
 
@@ -156,23 +140,18 @@ public class SleipnirWindController implements AudioListener, RotationReceiver, 
     }
 
     public void startMeasuring() {
-        playerVolume = preferences.getFloat("playerVolume", 0.5f);
-
         myAudioManager = (AudioManager) mContext.getSystemService(Context.AUDIO_SERVICE);
 
         mSettingsContentObserver = new SettingsContentObserver(mContext, new Handler());
         appContext.getContentResolver().registerContentObserver(android.provider.Settings.System.CONTENT_URI, true, mSettingsContentObserver);
 
         if (player == null)
-            player = new AudioTrack(AudioManager.STREAM_MUSIC, sampleRate, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT, numSamples * 2, AudioTrack.MODE_STREAM);
+            player = new AudioTrack(AudioManager.STREAM_MUSIC, sampleRate, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT, sampleRate * 2, AudioTrack.MODE_STREAM);
 
         if (recorder == null) {
-            minBufferSizeRecording = AudioRecord.getMinBufferSize(sampleRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
-            if (minBufferSizeRecording < N * sampleRate) {
-                minBufferSizeRecording = N * sampleRate;
-            }
-            Log.d(TAG, "MinBufferSizeRecording: " + minBufferSizeRecording);
-            recorder = new AudioRecord(MediaRecorder.AudioSource.MIC, sampleRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, minBufferSizeRecording);
+            audioBufferSize = AudioRecord.getMinBufferSize(sampleRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
+            if (audioBufferSize < 3 * sampleRate) audioBufferSize = 3 * sampleRate;
+            recorder = new AudioRecord(MediaRecorder.AudioSource.MIC, sampleRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, audioBufferSize);
         }
 
         myAudioManager.setMicrophoneMute(false);
@@ -186,7 +165,6 @@ public class SleipnirWindController implements AudioListener, RotationReceiver, 
 
 
     private void resumeMeasuring() {
-
         if (isMeasuring) {
 
             final int maxVolume = myAudioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
@@ -219,17 +197,18 @@ public class SleipnirWindController implements AudioListener, RotationReceiver, 
                 orientationSensorManager.start();
             }
 
-            audioPlayer = new VaavudAudioPlaying(player, mFileName, playerVolume);
-            audioRecording = new VaavudAudioRecording(recorder, this, bufferSizeRecording);
+            audioPlayer = new AudioPlayer(player);
+            audioRecorder = new AudioRecorder(recorder, this, processBufferSize);
 
-            vaavudVolumeAdjust = new VaavudVolumeAdjust(bufferSizeRecording, playerVolume);
+            volumeAdjust = new VolumeAdjust(processBufferSize, audioBufferSize, preferences.getFloat("playerVolume", 0.5f));
+            setVolume(volumeAdjust.getVolume());
+
             rotationProcessor = new RotationProcessor(this);
             tickProcessor = new TickProcessor(this);
-            audioProcessor = new AudioProcessor(tickProcessor, bufferSizeRecording);
+            audioProcessor = new AudioProcessor(tickProcessor, processBufferSize);
 
             audioPlayer.start();
-            audioRecording.start();
-
+            audioRecorder.start();
         }
     }
 
@@ -237,7 +216,7 @@ public class SleipnirWindController implements AudioListener, RotationReceiver, 
         pauseMeasuring();
         isMeasuring = false;
         SharedPreferences.Editor editor = preferences.edit();
-        editor.putFloat("playerVolume", playerVolume);
+        editor.putFloat("playerVolume", volumeAdjust.getVolume());
         editor.apply();
         appContext.getContentResolver().unregisterContentObserver(mSettingsContentObserver);
     }
@@ -246,7 +225,7 @@ public class SleipnirWindController implements AudioListener, RotationReceiver, 
     private void pauseMeasuring() {
         if (isMeasuring) {
             if (audioPlayer != null) audioPlayer.close();
-            if (audioRecording != null) audioRecording.close();
+            if (audioRecorder != null) audioRecorder.close();
 
             audioProcessor.close();
             tickProcessor.close();
@@ -255,7 +234,6 @@ public class SleipnirWindController implements AudioListener, RotationReceiver, 
                 orientationSensorManager.stop();
             }
             myAudioManager.abandonAudioFocus(null);
-            //Object and thread destroying
         }
     }
 
@@ -283,41 +261,40 @@ public class SleipnirWindController implements AudioListener, RotationReceiver, 
     @Override
     public void newAudioBuffer(final short[] audioBuffer) {
 
+        if (audioBuffer == null) return; // FIXME: 14/01/16 is this necessary?
         if (signalListener != null) signalListener.signalChanged(audioBuffer);
 
-        if (audioBuffer == null) return;
-
-        Pair<Integer, Double> noise = vaavudVolumeAdjust.noiseEstimator(audioBuffer);
         audioProcessor.processSamples(sampleCounter, audioBuffer);
-
-        if (noise != null) {
-            playerVolume = vaavudVolumeAdjust.newVolume(noise.first, noise.second, numRotations); // !!! numRotations
-
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-                player.setStereoVolume(playerVolume, playerVolume);
-            } else {
-                player.setVolume(playerVolume);
-            }
-
-            numRotations = 0;
-            tickProcessor.resetDetectionErrors();
-        }
+        Float volume = volumeAdjust.newVolume(audioBuffer, true); // fixme: rotationDetected
+        if (volume != null) setVolume(volume);
 
         sampleCounter += audioBuffer.length;
     }
 
-    private float windspeed(float freq) {
+    private float windSpeed(float freq) {
         return freq > 0 ? freq*0.325f + 0.2f : 0f;
     }
 
     @Override
     public void newRotation(Rotation rotation) {
 
+        volumeAdjust.newRotation(rotation.time);
+
+        rotationProcessor.newRotation(rotation);
+
         // send to upwards
         if (speedListener != null) {
-            float windspeed = windspeed(sampleRate/(float) rotation.timeOneRotation);
+            float windspeed = windSpeed(sampleRate/(float) rotation.timeOneRotation);
             long eventTime = startTime + (int) (1000*rotation.time/(float) sampleRate);
             if (throttleSpeed.shouldSend(eventTime)) speedListener.speedChanged(new SpeedEvent(eventTime, windspeed));
+        }
+    }
+
+    public void setVolume(float vol) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+            player.setStereoVolume(vol, vol);
+        } else {
+            player.setVolume(vol);
         }
     }
 

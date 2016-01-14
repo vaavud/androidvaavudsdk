@@ -12,7 +12,7 @@ import java.util.List;
 /**
  * Created by juan on 16/07/15.
  */
-public class VaavudVolumeAdjust {
+public class VolumeAdjust {
 
     private static final String TAG = "SDK:VolumeAdjust";
 
@@ -31,7 +31,6 @@ public class VaavudVolumeAdjust {
     private static final int NOISE_THRESHOLD = 1100;
 
     private short[] buffer;
-
     private double[] sNVolume = new double[VOLUME_STEPS + 1];
 
     private int volumeCounter = 0;
@@ -41,29 +40,28 @@ public class VaavudVolumeAdjust {
     private int dirState = 0;
 
     private int sampleRate = 44100;
+    private int analysisPeriod = 512*20;
     private int skipSamples = 0;
     private int nSamples = 100;
-    private long counter;
+    private long counter = 0;;
     private List<Integer> diffValues;
-    private double sN;
-    private int samplesPerBuffer;
+    private int samplesPerBuffer = 100;
     private int volumeLevel = VOLUME_STEPS / 2;
 
-    public VaavudVolumeAdjust(int audioBufferSize, Float playerVolume) {
-        diffValues = new ArrayList<Integer>();
-        counter = 0;
-        sN = 0;
-        samplesPerBuffer = 100;
+    private long lastRotation;
+
+    public VolumeAdjust(int processBufferSize, int audioBufferSize, Float playerVolume) {
+        diffValues = new ArrayList<>();
         volumeLevel = (int) (playerVolume * 100);
         if (volumeLevel != 50) {
             volState = STEEPESTASCENT_STATE;
         }
-        buffer = new short[audioBufferSize];
-        skipSamples = (int) (AudioRecord.getMinBufferSize(sampleRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT) * 2);
-        samplesPerBuffer = (int) (0.01f * audioBufferSize);
+        buffer = new short[processBufferSize];
+        skipSamples = audioBufferSize * 2;
+        samplesPerBuffer = processBufferSize*nSamples/analysisPeriod;
     }
 
-    public Pair<Integer, Double> noiseEstimator(short[] audioBuffer) {
+    public Float newVolume(short[] audioBuffer, boolean rotationDetected) {
         counter += audioBuffer.length;
         if (counter > skipSamples) {
             System.arraycopy(audioBuffer, 0, buffer, 0, buffer.length);
@@ -78,20 +76,21 @@ public class VaavudVolumeAdjust {
             if (diffValues.size() == nSamples) {
                 Collections.sort(diffValues);
                 int diff20 = diffValues.get(19);
-                sN = (double) diffValues.get(79) / (double) diffValues.get(39);
+                double sN = (double) diffValues.get(79) / (double) diffValues.get(39);
                 counter = 0;
                 diffValues.clear();
-                return Pair.create(diff20, sN);
+
+                return newVolumeX(diff20, sN, rotationDetected);
             }
         }
 
         return null;
     }
 
-    public float newVolume(int diff20, double sN, int numRotations) {
+    public float newVolumeX(int diff20, double sN, boolean rotationDetected) {
         volumeCounter++;
         float volumeChange = 0.0f;
-        if (sN > 6 && numRotations >= 1) {
+        if (sN > 6 && rotationDetected) {
             volState = STEEPESTASCENT_STATE;
         }
         switch (volState) {
@@ -119,7 +118,7 @@ public class VaavudVolumeAdjust {
                 break;
 
             case STEEPESTASCENT_STATE:
-                boolean signalIsGood = (sN > 1.2 && numRotations >= 1);
+                boolean signalIsGood = (sN > 1.2 && rotationDetected);
                 if (signalIsGood) {
                     sNVolume[volumeLevel] = ((sNVolume[volumeLevel] == 0.0d) ? sN : sNVolume[volumeLevel] * 0.7 + 0.3 * sN);
                     volumeCounter = 0;
@@ -169,7 +168,7 @@ public class VaavudVolumeAdjust {
         return getVolume();
     }
 
-    private float getVolume() {
+    public float getVolume() {
         return (float) volumeLevel / (float) VOLUME_STEPS;
     }
 
@@ -189,5 +188,9 @@ public class VaavudVolumeAdjust {
             }
         }
         return maxi;
+    }
+
+    public void newRotation(long time) {
+        this.lastRotation= time;
     }
 }
