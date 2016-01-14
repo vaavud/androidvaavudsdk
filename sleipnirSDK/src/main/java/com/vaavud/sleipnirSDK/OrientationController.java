@@ -9,7 +9,7 @@ import android.hardware.SensorManager;
 import android.location.Location;
 import android.util.Log;
 
-public class OrientationSensorManagerSleipnir implements SensorEventListener {
+public class OrientationController implements SensorEventListener {
 
     private static final int NUM_ITERATIONS = 40;
     private static final int ACC_DELAY = 1250; // microSeconds
@@ -50,7 +50,7 @@ public class OrientationSensorManagerSleipnir implements SensorEventListener {
     }
 
 
-    public OrientationSensorManagerSleipnir(Context mainContext) {
+    public OrientationController(Context mainContext) {
         sensorManager = (SensorManager) mainContext.getSystemService(Context.SENSOR_SERVICE);
 //		locationManager = (LocationManager) mainContext.getSystemService(Context.LOCATION_SERVICE);
 //		mSignalListener = listener;

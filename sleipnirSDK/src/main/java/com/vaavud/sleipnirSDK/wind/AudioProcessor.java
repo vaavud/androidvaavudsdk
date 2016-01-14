@@ -210,12 +210,6 @@ public class AudioProcessor {
         lastMvgGapMax = 0;
     }
 
-    public void close() {
-        buffer = null;
-        mvgAvg = null;
-        mvgDiff = null;
-    }
-
     private int mod(long l, int y) {
         int result = (int) (l % y);
         if (result < 0) {

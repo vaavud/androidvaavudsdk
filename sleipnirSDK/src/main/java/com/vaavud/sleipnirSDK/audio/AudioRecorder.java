@@ -1,6 +1,8 @@
 package com.vaavud.sleipnirSDK.audio;
 
+import android.media.AudioFormat;
 import android.media.AudioRecord;
+import android.media.MediaRecorder;
 import android.util.Log;
 
 import com.vaavud.sleipnirSDK.listener.AudioListener;
@@ -10,25 +12,30 @@ public class AudioRecorder extends Thread {
     private static final String TAG = "SDK:AudioRecorder";
 
     private boolean stopped = false;
-    private AudioListener mAudioListener = null;
-    private int mBufferSizeRecording;
-    private AudioRecord mRecorder = null;
+    private AudioListener audioListener = null;
+    private int inputBufferSize;
+    private int processBufferSize;
+    private AudioRecord audioRecord = null;
     private short[] buffer = null;
     private int bytesRead = 0;
-
+    private final int sampleRate = 44100; //Hz
 
     /**
      * Give the thread high priority so that it's not canceled unexpectedly, and start it
      */
-    public AudioRecorder(AudioRecord recorder, AudioListener audioListener, int bufferSizeRecording) {
+    public AudioRecorder(AudioListener audioListener, int processBufferSize) {
+        this.processBufferSize = processBufferSize;
+        this.audioListener = audioListener;
+
+        inputBufferSize = AudioRecord.getMinBufferSize(sampleRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
+        if (inputBufferSize < 3 * sampleRate) inputBufferSize = 3 * sampleRate;
+        audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC, sampleRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, inputBufferSize);
+
         android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_URGENT_AUDIO);
-        mAudioListener = audioListener;
-        mRecorder = recorder;
-        mBufferSizeRecording = bufferSizeRecording;
-        if (mRecorder != null && mRecorder.getState() != AudioRecord.STATE_UNINITIALIZED) {
-            if (mRecorder.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING) {
-//								Log.d(TAG, "mRecorderStoped");
-                mRecorder.stop();
+
+        if (audioRecord != null && audioRecord.getState() != AudioRecord.STATE_UNINITIALIZED) {
+            if (audioRecord.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING) {
+                audioRecord.stop();
             }
         }
     }
@@ -41,44 +48,47 @@ public class AudioRecorder extends Thread {
          */
 
         stopped = false;
-        mRecorder.startRecording();
-        buffer = new short[mBufferSizeRecording];
-//						Log.d("SleipnirCoreController", "Recording Status: " + mRecorder.getRecordingState());
-            /*
-             * Loops until something outside of this thread stops it.
-             * Reads the data from the recorder and writes it to the audio track for playback.
-             */
-//				Log.d(TAG, "Recording status: " + mRecorder.getRecordingState());
+        audioRecord.startRecording();
+        buffer = new short[processBufferSize];
+        /*
+         * Loops until something outside of this thread stops it.
+         * Reads the data from the recorder and writes it to the audio track for playback.
+         */
+        Log.d(TAG, "Recording status: " + audioRecord.getRecordingState());
         while (!stopped) {
             try {
-                bytesRead = mRecorder.read(buffer, 0, buffer.length);
-                if (mAudioListener != null && bytesRead > 0) {
-                    mAudioListener.newAudioBuffer(buffer);
+                bytesRead = audioRecord.read(buffer, 0, buffer.length);
+                if (audioListener != null && bytesRead > 0) {
+                    audioListener.newAudioBuffer(buffer);
                 }
-//                Log.d(TAG, "Numer of bits read : " + bytesRead);
             } catch (Throwable x) {
-//                Log.w(TAG, "Error reading voice audio" + x.getMessage());
+                Log.w(TAG, "Error reading voice audio" + x.getMessage());
                 stopped = true;
+            } finally {
+                /*
+                 * Frees the thread's resources after the loop completes so that it can be run again */
+
+                Log.d("SleipnirCoreController", "Executing Finally");
+//                buffer = null;
             }
         }
-//				/*
-//         * Frees the thread's resources after the loop completes so that it can be run again */ finally {
-////						Log.d("SleipnirCoreController", "Executing Finally");
-//				buffer = null;
-
-//				}
     }
 
 
     /**
      * Called from outside of the thread in order to stop the recording/playback loop
      */
-    public void close() {
+    public void end() {
         stopped = true;
-        buffer = null;
-        if (mRecorder != null && mRecorder.getState() == AudioRecord.RECORDSTATE_RECORDING) {
-            mRecorder.stop();
-            mRecorder.release();
+        if (audioRecord != null && audioRecord.getState() == AudioRecord.RECORDSTATE_RECORDING) {
+            audioRecord.stop();
+            audioRecord.release();
+        } else {
+            throw new RuntimeException("Woops ");
         }
+    }
+
+    public int getBufferSize() {
+        return inputBufferSize;
     }
 }

@@ -127,12 +127,6 @@ public class TickProcessor implements TickReceiver{
         this.heading = heading;
     }
 
-    public void close() {
-        times = null;
-        velocities = null;
-    }
-
-
     public void resetDetectionErrors() {
         tickDetectionErrorCount = 0;
     }
