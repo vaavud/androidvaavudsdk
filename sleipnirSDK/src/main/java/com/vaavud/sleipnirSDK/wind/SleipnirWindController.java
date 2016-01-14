@@ -10,9 +10,7 @@ import android.media.AudioManager;
 import android.media.AudioRecord;
 import android.media.AudioTrack;
 import android.media.MediaRecorder;
-import android.os.Build;
 import android.os.Handler;
-import android.util.Log;
 
 import com.vaavud.sleipnirSDK.OrientationSensorManagerSleipnir;
 import com.vaavud.sleipnirSDK.R;
@@ -173,21 +171,21 @@ public class SleipnirWindController implements AudioListener, RotationReceiver, 
 
             int volume = myAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
 
-            AlertDialog.Builder builder1 = new AlertDialog.Builder(mContext);
-            builder1.setTitle(appContext.getResources().getString(R.string.sound_disclaimer_title));
-            builder1.setMessage(appContext.getResources().getString(R.string.sound_disclaimer));
-            builder1.setCancelable(false);
-            builder1.setNeutralButton(appContext.getResources().getString(R.string.button_ok),
-                    new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog, int id) {
-                            dialog.dismiss();
-                            myAudioManager.setStreamVolume(AudioManager.STREAM_MUSIC, maxVolume, AudioManager.FLAG_REMOVE_SOUND_AND_VIBRATE);
-                        }
-                    });
-
-            AlertDialog alert = builder1.create();
-
             if (volume < maxVolume) {
+                AlertDialog.Builder builder1 = new AlertDialog.Builder(mContext);
+                builder1.setTitle(appContext.getResources().getString(R.string.sound_disclaimer_title));
+                builder1.setMessage(appContext.getResources().getString(R.string.sound_disclaimer));
+                builder1.setCancelable(false);
+                builder1.setNeutralButton(appContext.getResources().getString(R.string.button_ok),
+                        new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int id) {
+                                dialog.dismiss();
+                                myAudioManager.setStreamVolume(AudioManager.STREAM_MUSIC, maxVolume, AudioManager.FLAG_REMOVE_SOUND_AND_VIBRATE);
+                            }
+                        });
+
+                AlertDialog alert = builder1.create();
+
                 alert.show();
             }
             if (orientationSensorManager != null) {
@@ -201,7 +199,7 @@ public class SleipnirWindController implements AudioListener, RotationReceiver, 
             audioRecorder = new AudioRecorder(recorder, this, processBufferSize);
 
             volumeAdjust = new VolumeAdjust(processBufferSize, audioBufferSize, preferences.getFloat("playerVolume", 0.5f));
-            setVolume(volumeAdjust.getVolume());
+            audioPlayer.setVolume(volumeAdjust.getVolume());
 
             rotationProcessor = new RotationProcessor(this);
             tickProcessor = new TickProcessor(this);
@@ -264,9 +262,9 @@ public class SleipnirWindController implements AudioListener, RotationReceiver, 
         if (audioBuffer == null) return; // FIXME: 14/01/16 is this necessary?
         if (signalListener != null) signalListener.signalChanged(audioBuffer);
 
-        audioProcessor.processSamples(sampleCounter, audioBuffer);
-        Float volume = volumeAdjust.newVolume(audioBuffer, true); // fixme: rotationDetected
-        if (volume != null) setVolume(volume);
+        audioProcessor.processSamples(sampleCounter, audioBuffer); // should be called before new Volume
+        Float volume = volumeAdjust.newVolume(audioBuffer);
+        if (volume != null) audioPlayer.setVolume(volume);
 
         sampleCounter += audioBuffer.length;
     }
@@ -278,7 +276,7 @@ public class SleipnirWindController implements AudioListener, RotationReceiver, 
     @Override
     public void newRotation(Rotation rotation) {
 
-        volumeAdjust.newRotation(rotation.time);
+        volumeAdjust.newRotation();
 
         rotationProcessor.newRotation(rotation);
 
@@ -287,14 +285,6 @@ public class SleipnirWindController implements AudioListener, RotationReceiver, 
             float windspeed = windSpeed(sampleRate/(float) rotation.timeOneRotation);
             long eventTime = startTime + (int) (1000*rotation.time/(float) sampleRate);
             if (throttleSpeed.shouldSend(eventTime)) speedListener.speedChanged(new SpeedEvent(eventTime, windspeed));
-        }
-    }
-
-    public void setVolume(float vol) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-            player.setStereoVolume(vol, vol);
-        } else {
-            player.setVolume(vol);
         }
     }
 

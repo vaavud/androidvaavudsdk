@@ -39,7 +39,6 @@ public class VolumeAdjust {
     private int expState = 0;
     private int dirState = 0;
 
-    private int sampleRate = 44100;
     private int analysisPeriod = 512*20;
     private int skipSamples = 0;
     private int nSamples = 100;
@@ -48,7 +47,7 @@ public class VolumeAdjust {
     private int samplesPerBuffer = 100;
     private int volumeLevel = VOLUME_STEPS / 2;
 
-    private long lastRotation;
+    private boolean rotationDetected = false;
 
     public VolumeAdjust(int processBufferSize, int audioBufferSize, Float playerVolume) {
         diffValues = new ArrayList<>();
@@ -61,33 +60,39 @@ public class VolumeAdjust {
         samplesPerBuffer = processBufferSize*nSamples/analysisPeriod;
     }
 
-    public Float newVolume(short[] audioBuffer, boolean rotationDetected) {
+    public Float newVolume(short[] audioBuffer) {
         counter += audioBuffer.length;
-        if (counter > skipSamples) {
-            System.arraycopy(audioBuffer, 0, buffer, 0, buffer.length);
-            for (int i = 0; (i < samplesPerBuffer) && (diffValues.size() < nSamples); i++) {
-                int index = ((int) Math.random() * (buffer.length - 2)) + 1;
-                int diff = 0;
-                for (int j = 0; j < 3; j++) {
-                    diff = diff + Math.abs(buffer[index + j] - buffer[index + j + 1]);
-                }
-                diffValues.add(diff);
-            }
-            if (diffValues.size() == nSamples) {
-                Collections.sort(diffValues);
-                int diff20 = diffValues.get(19);
-                double sN = (double) diffValues.get(79) / (double) diffValues.get(39);
-                counter = 0;
-                diffValues.clear();
+        if (counter <= skipSamples) {
+            return null;
+        }
 
-                return newVolumeX(diff20, sN, rotationDetected);
+        System.arraycopy(audioBuffer, 0, buffer, 0, buffer.length); // // FIXME: 14/01/16 is this necessary?
+        for (int i = 0; (i < samplesPerBuffer) && (diffValues.size() < nSamples); i++) {
+            int index = ((int) Math.random() * (buffer.length - 2)) + 1;
+            int diff = 0;
+            for (int j = 0; j < 3; j++) {
+                diff = diff + Math.abs(buffer[index + j] - buffer[index + j + 1]);
             }
+            diffValues.add(diff);
+        }
+
+        if (diffValues.size() == nSamples) {
+            Collections.sort(diffValues);
+            int diff20 = diffValues.get(19);
+            double sN = (double) diffValues.get(79) / (double) diffValues.get(39);
+
+            float vol = newVolumeX(diff20, sN);
+            counter = 0;
+            rotationDetected = false;
+            diffValues.clear();
+
+            return vol;
         }
 
         return null;
     }
 
-    public float newVolumeX(int diff20, double sN, boolean rotationDetected) {
+    public float newVolumeX(int diff20, double sN) {
         volumeCounter++;
         float volumeChange = 0.0f;
         if (sN > 6 && rotationDetected) {
@@ -190,7 +195,7 @@ public class VolumeAdjust {
         return maxi;
     }
 
-    public void newRotation(long time) {
-        this.lastRotation= time;
+    public void newRotation() {
+        if (counter > skipSamples) rotationDetected = true;
     }
 }
