@@ -16,14 +16,6 @@ public class MjolnirController implements FrequencyReceiver {
     private static final double FREQUENCY_START = 0.238D;
     private MeasureStatus status;
 
-    public void setSpeedListener(SpeedListener speedListener) {
-        this.speedListener = speedListener;
-    }
-
-    public void setStatusListener(StatusListener _statusListener) {
-        statusListener = _statusListener;
-    }
-
     private SpeedListener speedListener;
     private StatusListener statusListener;
     private MagneticFieldSensorManager myMagneticFieldSensorManager;
@@ -77,5 +69,13 @@ public class MjolnirController implements FrequencyReceiver {
         }
         updateMeasureStatus();
         speedListener.speedChanged(new SpeedEvent(data.time, (float) windspeed));
+    }
+
+    public void setSpeedListener(SpeedListener speedListener) {
+        this.speedListener = speedListener;
+    }
+
+    public void setStatusListener(StatusListener _statusListener) {
+        statusListener = _statusListener;
     }
 }

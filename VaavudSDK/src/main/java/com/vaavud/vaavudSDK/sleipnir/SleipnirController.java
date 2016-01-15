@@ -47,8 +47,8 @@ public class SleipnirController implements AudioListener, RotationReceiver, Dire
     private TickProcessor tickProcessor;
     private RotationProcessor rotationProcessor;
     private VolumeAdjust volumeAdjust;
-    public SpeedListener speedListener;
-    public SignalListener signalListener;
+    private SpeedListener speedListener;
+    private SignalListener signalListener;
 
     private VolumeObserver volumeObserver;
     private SharedPreferences preferences;
@@ -176,5 +176,13 @@ public class SleipnirController implements AudioListener, RotationReceiver, Dire
     @Override
     public void newHeading(float heading) {
         tickProcessor.setHeading(heading);
+    }
+
+    public void setSpeedListener(SpeedListener speedListener) {
+        this.speedListener = speedListener;
+    }
+
+    public void setSignalListener(SignalListener signalListener) {
+        this.signalListener = signalListener;
     }
 }

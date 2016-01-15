@@ -65,7 +65,8 @@ public class VolumeAdjust {
 
         System.arraycopy(audioBuffer, 0, buffer, 0, buffer.length); // // FIXME: 14/01/16 is this necessary?
         for (int i = 0; (i < samplesPerBuffer) && (diffValues.size() < nSamples); i++) {
-            int index = ((int) Math.random() * (buffer.length - 2)) + 1;
+            int index = (int) (i / (float) samplesPerBuffer * buffer.length);
+
             int diff = 0;
             for (int j = 0; j < 3; j++) {
                 diff = diff + Math.abs(buffer[index + j] - buffer[index + j + 1]);

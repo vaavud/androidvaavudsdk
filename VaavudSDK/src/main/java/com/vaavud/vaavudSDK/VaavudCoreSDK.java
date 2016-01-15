@@ -5,13 +5,14 @@ import android.content.Context;
 import com.vaavud.vaavudSDK.listener.SpeedListener;
 import com.vaavud.vaavudSDK.listener.StatusListener;
 import com.vaavud.vaavudSDK.mjolnir.MjolnirController;
+import com.vaavud.vaavudSDK.model.SpeedEvent;
 import com.vaavud.vaavudSDK.orientation.OrientationController;
 import com.vaavud.vaavudSDK.sleipnir.SleipnirController;
 
 /**
  * Created by aokholm on 15/01/16.
  */
-public class VaavudCoreSDK {
+public class VaavudCoreSDK implements SpeedListener{
 
     Context context;
 
@@ -30,6 +31,7 @@ public class VaavudCoreSDK {
     public void startMjolnir() throws VaavudError {
         orientation().start();
         orientation().setMjolnir(true);
+        mjolnir().setSpeedListener(this);
         mjolnir().start();
     }
 
@@ -40,6 +42,8 @@ public class VaavudCoreSDK {
     public void startSleipnir() throws VaavudError {
         orientation().setMjolnir(false);
         orientation().setHeadingListener(sleipnir());
+
+        sleipnir().setSpeedListener(this);
 
         orientation().start();
         sleipnir().start();
@@ -77,5 +81,10 @@ public class VaavudCoreSDK {
 
     public void setStatusListener(StatusListener statusListener) {
         this.statusListener = statusListener;
+    }
+
+    @Override
+    public void speedChanged(SpeedEvent event) {
+        this.speedListener.speedChanged(event);
     }
 }
