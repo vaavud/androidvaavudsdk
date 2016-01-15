@@ -5,6 +5,7 @@ import android.content.Context;
 import com.vaavud.vaavudSDK.listener.SpeedListener;
 import com.vaavud.vaavudSDK.listener.StatusListener;
 import com.vaavud.vaavudSDK.mjolnir.MjolnirController;
+import com.vaavud.vaavudSDK.orientation.OrientationController;
 import com.vaavud.vaavudSDK.sleipnir.SleipnirController;
 
 /**
@@ -12,37 +13,61 @@ import com.vaavud.vaavudSDK.sleipnir.SleipnirController;
  */
 public class VaavudCoreSDK {
 
-    private Context context;
+    Context context;
 
     private SpeedListener speedListener;
     private StatusListener statusListener;
 
-    private SleipnirController sleipnirCont;
-    private MjolnirController mjolnirCont;
+    private SleipnirController _sleipnir;
+    private MjolnirController _mjolnir;
+    private OrientationController _orientation;
+
 
     public VaavudCoreSDK(Context context) {
         this.context = context;
     }
 
     public void startMjolnir() throws VaavudError {
-        if (mjolnirCont == null) {
-            mjolnirCont = new MjolnirController(context);
-        }
-        mjolnirCont.startMeasuring();
+        orientation().start();
+        orientation().setMjolnir(true);
+        mjolnir().start();
     }
 
     public void stopMjolnir() {
-        mjolnirCont.stopMeasuring();
+        mjolnir().stop();
     }
 
-    public void startSleipnir() throws VaavudError{
-        if (sleipnirCont == null) {
-            sleipnirCont = new SleipnirController(context);
-        }
-        sleipnirCont.startMeasuring();
+    public void startSleipnir() throws VaavudError {
+        orientation().setMjolnir(false);
+        orientation().setHeadingListener(sleipnir());
+
+        orientation().start();
+        sleipnir().start();
     }
 
     public void stopSleipnir() {
-        sleipnirCont.stopMeasuring();
+        sleipnir().stop();
+        orientation().stop();
+    }
+
+    private MjolnirController mjolnir() {
+        if (_mjolnir == null) {
+            _mjolnir = new MjolnirController(context, orientation());
+        }
+        return _mjolnir;
+    }
+
+    private SleipnirController sleipnir() {
+        if (_sleipnir == null) {
+            _sleipnir = new SleipnirController(context);
+        }
+        return _sleipnir;
+    }
+
+    private OrientationController orientation() {
+        if (_orientation == null) {
+            _orientation = new OrientationController(context);
+        }
+        return _orientation;
     }
 }

@@ -8,5 +8,5 @@ import com.vaavud.vaavudSDK.model.FreqAmp;
 
 
 public interface FrequencyReceiver {
-		void newFrequency(FreqAmp data);
+    void newFrequency(FreqAmp data);
 }

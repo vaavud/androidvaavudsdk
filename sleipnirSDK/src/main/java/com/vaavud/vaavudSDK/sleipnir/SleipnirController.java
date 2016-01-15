@@ -7,6 +7,8 @@ import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.media.AudioManager;
 
+import com.vaavud.vaavudSDK.VaavudError;
+import com.vaavud.vaavudSDK.listener.HeadingListener;
 import com.vaavud.vaavudSDK.orientation.OrientationController;
 import com.vaavud.vaavudSDK.R;
 import com.vaavud.vaavudSDK.sleipnir.audio.VolumeObserver;
@@ -19,14 +21,14 @@ import com.vaavud.vaavudSDK.listener.SpeedListener;
 import com.vaavud.vaavudSDK.model.SpeedEvent;
 
 
-public class SleipnirController implements AudioListener, RotationReceiver, DirectionReceiver {
+public class SleipnirController implements AudioListener, RotationReceiver, DirectionReceiver, HeadingListener {
 
     private static final String TAG = "SDK:SleipnirWC";
 
     private Context mContext;
     private Context appContext;
 
-    private OrientationController oriCont;
+    private OrientationController orientation;
 
     private AudioManager audioManager;
 
@@ -59,7 +61,7 @@ public class SleipnirController implements AudioListener, RotationReceiver, Dire
         preferences = appContext.getSharedPreferences("SleipnirSDKPreferences", Context.MODE_PRIVATE);
     }
 
-    public void startMeasuring() {
+    public void start() throws VaavudError {
         audioManager = (AudioManager) mContext.getSystemService(Context.AUDIO_SERVICE);
         audioManager.setMicrophoneMute(false);
 
@@ -71,11 +73,6 @@ public class SleipnirController implements AudioListener, RotationReceiver, Dire
         sampleCounter = 0;
 
         checkVolume();
-
-        oriCont = new OrientationController(mContext);
-        if (oriCont.isSensorAvailable()) {
-            oriCont.start();
-        }
 
         audioPlayer = new AudioPlayer();
         audioRecorder = new AudioRecorder(this, processBufferSize);
@@ -90,14 +87,10 @@ public class SleipnirController implements AudioListener, RotationReceiver, Dire
         audioRecorder.start();
     }
 
-    public void stopMeasuring() {
+    public void stop() {
 
         audioPlayer.end();
         audioRecorder.end();
-
-        if (oriCont.isSensorAvailable()) {
-            oriCont.stop();
-        }
 
         saveVolume();
 
@@ -107,7 +100,7 @@ public class SleipnirController implements AudioListener, RotationReceiver, Dire
 
 
     public double getOrientationAngle() {
-        return oriCont.getAngle();
+        return orientation.getAngle();
     }
 
     @Override
@@ -178,5 +171,10 @@ public class SleipnirController implements AudioListener, RotationReceiver, Dire
     @Override
     public void newDirection(Direction direction) {
 //        Log.d("TAG", direction.globalDirection);
+    }
+
+    @Override
+    public void newHeading(float heading) {
+        tickProcessor.setHeading(heading);
     }
 }

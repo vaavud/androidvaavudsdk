@@ -9,46 +9,46 @@ import java.util.List;
 
 public class MagneticDataManager {
 
-		private List<MagneticFieldPoint> magneticfieldMeasurements;
-		private int lastServedWindmeasurement = 0;
+    private List<MagneticFieldPoint> magneticfieldMeasurements;
+    private int lastServedWindmeasurement = 0;
 
 
-		public MagneticDataManager() {
-				magneticfieldMeasurements = new ArrayList<>();
-		}
+    public MagneticDataManager() {
+        magneticfieldMeasurements = new ArrayList<>();
+    }
 
-		public void addMagneticFieldReading(MagneticFieldPoint magReading) {
-				magneticfieldMeasurements.add(magReading);
-		}
+    public void addMagneticFieldReading(MagneticFieldPoint magReading) {
+        magneticfieldMeasurements.add(magReading);
+    }
 
-		public List<MagneticFieldPoint> getLastXMagneticfieldMeasurements(Integer numberOfMeasurements) {
+    public List<MagneticFieldPoint> getLastXMagneticfieldMeasurements(Integer numberOfMeasurements) {
 
-				int listSize = magneticfieldMeasurements.size();
-				List<MagneticFieldPoint> magneticfieldMeasurementsList;
+        int listSize = magneticfieldMeasurements.size();
+        List<MagneticFieldPoint> magneticfieldMeasurementsList;
 
-				if (listSize > numberOfMeasurements) {
-						magneticfieldMeasurementsList = magneticfieldMeasurements.subList(listSize - numberOfMeasurements, listSize);
+        if (listSize > numberOfMeasurements) {
+            magneticfieldMeasurementsList = magneticfieldMeasurements.subList(listSize - numberOfMeasurements, listSize);
 
-						return magneticfieldMeasurementsList;
-				} else {
+            return magneticfieldMeasurementsList;
+        } else {
 
-						magneticfieldMeasurementsList = new ArrayList<>();
-						magneticfieldMeasurementsList.addAll(magneticfieldMeasurements);
+            magneticfieldMeasurementsList = new ArrayList<>();
+            magneticfieldMeasurementsList.addAll(magneticfieldMeasurements);
 
-						return magneticfieldMeasurementsList;
-				}
-		}
+            return magneticfieldMeasurementsList;
+        }
+    }
 
-		public List<MagneticFieldPoint> getMagneticfieldMeasurements() {
-				return magneticfieldMeasurements;
-		}
+    public List<MagneticFieldPoint> getMagneticfieldMeasurements() {
+        return magneticfieldMeasurements;
+    }
 
-		public void clearData() {
-				magneticfieldMeasurements = new ArrayList<>();
-		}
+    public void clearData() {
+        magneticfieldMeasurements = new ArrayList<>();
+    }
 
-		public boolean newMeasurementsAvailable() {
-				return magneticfieldMeasurements.size() > lastServedWindmeasurement;
-		}
+    public boolean newMeasurementsAvailable() {
+        return magneticfieldMeasurements.size() > lastServedWindmeasurement;
+    }
 
 }

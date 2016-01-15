@@ -34,13 +34,12 @@ public class FFTManager {
         }
     };
 
-    public FFTManager(MagneticDataManager _myDataManager,FrequencyReceiver _receiver) {
+    public FFTManager(MagneticDataManager _myDataManager, FrequencyReceiver _receiver) {
         myDataManager = _myDataManager;
         receiver = _receiver;
         normalFFT = new FFTHandler(LARGEST_FFT_DATA_LENGHT, FFT_LENGHT, FFTHandler.WELCH_WINDOW, FFTHandler.QUADRATIC_INTERPOLATION);
         isRunning = false;
     }
-
 
 
     public void generateFrequencyAmplitude() {
@@ -58,7 +57,7 @@ public class FFTManager {
                 threeAxisData.add(new Float[]{magneticFieldData.get(i).magneticAxis[0], magneticFieldData.get(i).magneticAxis[1], magneticFieldData.get(i).magneticAxis[2]});
             }
 
-            double timeDiff = magneticFieldData.get(magneticFieldData.size() - 1).time- magneticFieldData.get(0).time;
+            double timeDiff = magneticFieldData.get(magneticFieldData.size() - 1).time - magneticFieldData.get(0).time;
             double sampleFrequency = (normalFFT.getDataLength() - 1) / timeDiff;
 
             myFreqAndAmp = normalFFT.getFreqAndAmpThreeAxisFFT(threeAxisData, sampleFrequency);
