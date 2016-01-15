@@ -39,7 +39,7 @@ public class VolumeAdjust {
     private int analysisPeriod = 512*20;
     private int skipSamples = 0;
     private int nSamples = 100;
-    private long counter = 0;;
+    private long counter = 0;
     private List<Integer> diffValues;
     private int samplesPerBuffer = 100;
     private int volumeLevel = VOLUME_STEPS / 2;
@@ -63,7 +63,7 @@ public class VolumeAdjust {
             return null;
         }
 
-        System.arraycopy(audioBuffer, 0, buffer, 0, buffer.length); // // FIXME: 14/01/16 is this necessary?
+        System.arraycopy(audioBuffer, 0, buffer, 0, buffer.length); // FIXME: 14/01/16 is this necessary?
         for (int i = 0; (i < samplesPerBuffer) && (diffValues.size() < nSamples); i++) {
             int index = (int) (i / (float) samplesPerBuffer * buffer.length);
 

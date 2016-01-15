@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.media.AudioManager;
+import android.util.Log;
 
 import com.vaavud.sleipnirSDK.R;
 import com.vaavud.vaavudSDK.VaavudError;
@@ -27,8 +28,6 @@ public class SleipnirController implements AudioListener, RotationReceiver, Dire
 
     private Context mContext;
     private Context appContext;
-
-    private OrientationController orientation;
 
     private AudioManager audioManager;
 
@@ -55,6 +54,10 @@ public class SleipnirController implements AudioListener, RotationReceiver, Dire
 
     private Throttle throttleSpeed = new Throttle(200);
 
+    // debug
+    private boolean volumeHigh = false;
+    private long lastChange = 0;
+
     public SleipnirController(Context context) {
         mContext = context;
         appContext = mContext.getApplicationContext();
@@ -78,6 +81,10 @@ public class SleipnirController implements AudioListener, RotationReceiver, Dire
         audioRecorder = new AudioRecorder(this, processBufferSize);
         volumeAdjust = new VolumeAdjust(processBufferSize, audioRecorder.getBufferSize(), preferences.getFloat("playerVolume", 0.5f));
         audioPlayer.setVolume(volumeAdjust.getVolume());
+        // debug
+        volumeHigh = false;
+        audioPlayer.setVolume(0.1f);
+
 
         rotationProcessor = new RotationProcessor(this);
         tickProcessor = new TickProcessor(this);
@@ -99,19 +106,34 @@ public class SleipnirController implements AudioListener, RotationReceiver, Dire
     }
 
 
-    public double getOrientationAngle() {
-        return orientation.getAngle();
-    }
-
     @Override
     public void newAudioBuffer(final short[] audioBuffer) {
 
         if (signalListener != null) signalListener.signalChanged(audioBuffer);
 
-        audioProcessor.processSamples(sampleCounter, audioBuffer); // should be called before new Volume
-        Float volume = volumeAdjust.newVolume(audioBuffer);
-        if (volume != null) audioPlayer.setVolume(volume);
+//        audioProcessor.processSamples(sampleCounter, audioBuffer); // should be called before new Volume
+//        Float volume = volumeAdjust.newVolume(audioBuffer);
+//        if (volume != null) audioPlayer.setVolume(volume);
 
+        for (int i = 0; i < audioBuffer.length -1; i++) {
+            if (volumeHigh) {
+                if (Math.abs(audioBuffer[i]) + Math.abs(audioBuffer[i+1]) > 10000) {
+                    Log.d(TAG, "time to change UP: " + String.valueOf((sampleCounter + i) - lastChange) );
+                    lastChange = sampleCounter + i;
+                    volumeHigh = false;
+                    audioPlayer.setVolume(0.1f);
+                    break;
+                }
+            } else {
+                if (Math.abs(audioBuffer[i]) + Math.abs(audioBuffer[i+1]) < 50) {
+                    Log.d(TAG, "time to change Down: " + String.valueOf((sampleCounter + i) - lastChange) );
+                    lastChange = sampleCounter + i;
+                    volumeHigh = true;
+                    audioPlayer.setVolume(0.8f);
+                    break;
+                }
+            }
+        }
         sampleCounter += audioBuffer.length;
     }
 
