@@ -12,11 +12,11 @@ public class AudioRecorder extends Thread {
     private static final String TAG = "SDK:AudioRecorder";
 
     private boolean stopped = false;
-    private AudioListener audioListener = null;
+    private AudioListener audioListener;
     private int inputBufferSize;
     private int processBufferSize;
-    private AudioRecord audioRecord = null;
-    private short[] buffer = null;
+    private AudioRecord audioRecord;
+    private short[] buffer;
     private int bytesRead = 0;
     private final int sampleRate = 44100; //Hz
 
@@ -64,12 +64,6 @@ public class AudioRecorder extends Thread {
             } catch (Throwable x) {
                 Log.w(TAG, "Error reading voice audio" + x.getMessage());
                 stopped = true;
-            } finally {
-                /*
-                 * Frees the thread's resources after the loop completes so that it can be run again */
-
-                Log.d("SleipnirCoreController", "Executing Finally");
-//                buffer = null;
             }
         }
     }
@@ -80,7 +74,7 @@ public class AudioRecorder extends Thread {
      */
     public void end() {
         stopped = true;
-        if (audioRecord != null && audioRecord.getState() == AudioRecord.RECORDSTATE_RECORDING) {
+        if (audioRecord.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING) {
             audioRecord.stop();
             audioRecord.release();
         } else {

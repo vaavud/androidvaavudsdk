@@ -6,11 +6,10 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.media.AudioManager;
-import android.os.Handler;
 
 import com.vaavud.sleipnirSDK.OrientationController;
 import com.vaavud.sleipnirSDK.R;
-import com.vaavud.sleipnirSDK.SettingsContentObserver;
+import com.vaavud.sleipnirSDK.VolumeObserver;
 import com.vaavud.sleipnirSDK.audio.AudioPlayer;
 import com.vaavud.sleipnirSDK.audio.AudioRecorder;
 import com.vaavud.sleipnirSDK.audio.VolumeAdjust;
@@ -49,7 +48,7 @@ public class SleipnirWindController implements AudioListener, RotationReceiver, 
     public SpeedListener speedListener;
     public SignalListener signalListener;
 
-    private SettingsContentObserver mSettingsContentObserver;
+    private VolumeObserver volumeObserver;
     private SharedPreferences preferences;
 
     private Throttle throttleSpeed = new Throttle(200);
@@ -64,8 +63,8 @@ public class SleipnirWindController implements AudioListener, RotationReceiver, 
         audioManager = (AudioManager) mContext.getSystemService(Context.AUDIO_SERVICE);
         audioManager.setMicrophoneMute(false);
 
-        mSettingsContentObserver = new SettingsContentObserver(mContext, new Handler());
-        appContext.getContentResolver().registerContentObserver(android.provider.Settings.System.CONTENT_URI, true, mSettingsContentObserver);
+        volumeObserver = new VolumeObserver(mContext);
+        appContext.getContentResolver().registerContentObserver(android.provider.Settings.System.CONTENT_URI, true, volumeObserver);
 
 
         startTime = System.currentTimeMillis();
@@ -96,13 +95,13 @@ public class SleipnirWindController implements AudioListener, RotationReceiver, 
         audioPlayer.end();
         audioRecorder.end();
 
-        if (oriCont != null && oriCont.isSensorAvailable()) {
+        if (oriCont.isSensorAvailable()) {
             oriCont.stop();
         }
 
         saveVolume();
 
-        appContext.getContentResolver().unregisterContentObserver(mSettingsContentObserver);
+        appContext.getContentResolver().unregisterContentObserver(volumeObserver);
         audioManager.abandonAudioFocus(null);
     }
 
@@ -114,7 +113,6 @@ public class SleipnirWindController implements AudioListener, RotationReceiver, 
     @Override
     public void newAudioBuffer(final short[] audioBuffer) {
 
-        if (audioBuffer == null) return; // FIXME: 14/01/16 is this necessary?
         if (signalListener != null) signalListener.signalChanged(audioBuffer);
 
         audioProcessor.processSamples(sampleCounter, audioBuffer); // should be called before new Volume

@@ -54,12 +54,12 @@ public class AudioPlayer extends Thread {
      */
     public void end() {
         isPlaying = false;
-        if (audioTrack.getState() == AudioTrack.PLAYSTATE_PLAYING) {
+        if (audioTrack.getPlayState() == AudioTrack.PLAYSTATE_PLAYING) {
             audioTrack.flush();
             audioTrack.stop();
             audioTrack.release();
         } else {
-            Log.d(TAG, "Woops " + audioTrack.getState());
+            throw new RuntimeException("Woops something with playstate wrong");
         }
     }
 

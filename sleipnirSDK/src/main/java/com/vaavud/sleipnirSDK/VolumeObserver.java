@@ -5,12 +5,12 @@ import android.database.ContentObserver;
 import android.media.AudioManager;
 import android.os.Handler;
 
-public class SettingsContentObserver extends ContentObserver {
+public class VolumeObserver extends ContentObserver {
 		int previousVolume;
 		Context context;
 
-		public SettingsContentObserver(Context c, Handler handler) {
-				super(handler);
+		public VolumeObserver(Context c) {
+				super(new Handler());
 				context = c;
 				AudioManager audio = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
 				previousVolume = audio.getStreamVolume(AudioManager.STREAM_MUSIC);
@@ -25,7 +25,7 @@ public class SettingsContentObserver extends ContentObserver {
 		public void onChange(boolean selfChange) {
 				AudioManager audio = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
 				int currentVolume = audio.getStreamVolume(AudioManager.STREAM_MUSIC);
-//        Log.d("SettingsContentObserver","Previous Volume:"+ previousVolume+ " Current Volume: " + currentVolume);
+//        Log.d("VolumeObserver","Previous Volume:"+ previousVolume+ " Current Volume: " + currentVolume);
 				int delta = previousVolume - currentVolume;
 
 				if (delta > 0) {
