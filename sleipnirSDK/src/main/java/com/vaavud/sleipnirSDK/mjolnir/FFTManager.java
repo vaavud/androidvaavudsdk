@@ -1,11 +1,10 @@
-package com.vaavud.sleipnirSDK.magnetic;
+package com.vaavud.sleipnirSDK.mjolnir;
 
 import android.os.Handler;
 
 
 import com.vaavud.sleipnirSDK.model.FreqAmp;
 import com.vaavud.sleipnirSDK.model.MagneticFieldPoint;
-import com.vaavud.sleipnirSDK.wind.FrequencyReceiver;
 
 import java.util.ArrayList;
 import java.util.List;

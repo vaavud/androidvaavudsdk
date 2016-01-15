@@ -1,4 +1,4 @@
-package com.vaavud.sleipnirSDK.wind;
+package com.vaavud.sleipnirSDK.sleipnir;
 
 
 import android.app.AlertDialog;
@@ -10,11 +10,11 @@ import android.media.AudioManager;
 import com.vaavud.sleipnirSDK.OrientationController;
 import com.vaavud.sleipnirSDK.R;
 import com.vaavud.sleipnirSDK.VolumeObserver;
-import com.vaavud.sleipnirSDK.audio.AudioPlayer;
-import com.vaavud.sleipnirSDK.audio.AudioRecorder;
-import com.vaavud.sleipnirSDK.audio.VolumeAdjust;
-import com.vaavud.sleipnirSDK.listener.AudioListener;
-import com.vaavud.sleipnirSDK.listener.SignalListener;
+import com.vaavud.sleipnirSDK.sleipnir.audio.AudioPlayer;
+import com.vaavud.sleipnirSDK.sleipnir.audio.AudioRecorder;
+import com.vaavud.sleipnirSDK.sleipnir.audio.VolumeAdjust;
+import com.vaavud.sleipnirSDK.sleipnir.listener.AudioListener;
+import com.vaavud.sleipnirSDK.sleipnir.listener.SignalListener;
 import com.vaavud.sleipnirSDK.listener.SpeedListener;
 import com.vaavud.sleipnirSDK.model.SpeedEvent;
 

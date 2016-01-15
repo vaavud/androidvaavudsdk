@@ -1,4 +1,4 @@
-package com.vaavud.sleipnirSDK.audio;
+package com.vaavud.sleipnirSDK.sleipnir.audio;
 
 import android.media.AudioFormat;
 import android.media.AudioManager;

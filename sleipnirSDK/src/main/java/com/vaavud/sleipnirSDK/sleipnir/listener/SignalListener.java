@@ -1,4 +1,4 @@
-package com.vaavud.sleipnirSDK.listener;
+package com.vaavud.sleipnirSDK.sleipnir.listener;
 
 public interface SignalListener {
 

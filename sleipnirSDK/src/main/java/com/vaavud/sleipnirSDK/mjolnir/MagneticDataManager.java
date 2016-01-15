@@ -1,4 +1,4 @@
-package com.vaavud.sleipnirSDK.magnetic;
+package com.vaavud.sleipnirSDK.mjolnir;
 
 
 import com.vaavud.sleipnirSDK.model.MagneticFieldPoint;

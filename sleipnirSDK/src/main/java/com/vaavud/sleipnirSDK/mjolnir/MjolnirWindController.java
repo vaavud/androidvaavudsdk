@@ -1,13 +1,9 @@
-package com.vaavud.sleipnirSDK.wind;
+package com.vaavud.sleipnirSDK.mjolnir;
 
 import android.content.Context;
 
 import com.vaavud.sleipnirSDK.listener.SpeedListener;
 import com.vaavud.sleipnirSDK.listener.StatusListener;
-import com.vaavud.sleipnirSDK.magnetic.FFTManager;
-import com.vaavud.sleipnirSDK.magnetic.MagneticDataManager;
-import com.vaavud.sleipnirSDK.magnetic.MagneticFieldSensorManager;
-import com.vaavud.sleipnirSDK.magnetic.OrientationSensorManager;
 import com.vaavud.sleipnirSDK.model.FreqAmp;
 import com.vaavud.sleipnirSDK.model.MeasureStatus;
 import com.vaavud.sleipnirSDK.model.SpeedEvent;

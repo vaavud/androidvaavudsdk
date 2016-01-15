@@ -1,4 +1,4 @@
-package com.vaavud.sleipnirSDK.magnetic;
+package com.vaavud.sleipnirSDK.mjolnir;
 
 import android.content.Context;
 import android.hardware.Sensor;

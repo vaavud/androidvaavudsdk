@@ -1,4 +1,4 @@
-package com.vaavud.sleipnirSDK.wind;
+package com.vaavud.sleipnirSDK.sleipnir;
 
 /**
  * Created by aokholm on 11/01/16.

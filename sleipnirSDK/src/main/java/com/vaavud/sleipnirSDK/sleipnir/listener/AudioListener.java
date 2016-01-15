@@ -1,4 +1,4 @@
-package com.vaavud.sleipnirSDK.listener;
+package com.vaavud.sleipnirSDK.sleipnir.listener;
 
 /**
  * Created by juan on 16/07/15.

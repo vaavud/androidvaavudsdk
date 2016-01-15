@@ -1,11 +1,11 @@
-package com.vaavud.sleipnirSDK.audio;
+package com.vaavud.sleipnirSDK.sleipnir.audio;
 
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
 import android.util.Log;
 
-import com.vaavud.sleipnirSDK.listener.AudioListener;
+import com.vaavud.sleipnirSDK.sleipnir.listener.AudioListener;
 
 
 public class AudioRecorder extends Thread {
