@@ -7,10 +7,10 @@ import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.media.AudioManager;
 
+import com.vaavud.sleipnirSDK.R;
 import com.vaavud.vaavudSDK.VaavudError;
 import com.vaavud.vaavudSDK.listener.HeadingListener;
 import com.vaavud.vaavudSDK.orientation.OrientationController;
-import com.vaavud.vaavudSDK.R;
 import com.vaavud.vaavudSDK.sleipnir.audio.VolumeObserver;
 import com.vaavud.vaavudSDK.sleipnir.audio.AudioPlayer;
 import com.vaavud.vaavudSDK.sleipnir.audio.AudioRecorder;

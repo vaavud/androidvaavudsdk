@@ -70,4 +70,12 @@ public class VaavudCoreSDK {
         }
         return _orientation;
     }
+
+    public void setSpeedListener(SpeedListener speedListener) {
+        this.speedListener = speedListener;
+    }
+
+    public void setStatusListener(StatusListener statusListener) {
+        this.statusListener = statusListener;
+    }
 }
