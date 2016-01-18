@@ -27,8 +27,8 @@ public class AudioRecorder extends Thread {
         this.processBufferSize = processBufferSize;
         this.audioListener = audioListener;
 
-        inputBufferSize = AudioRecord.getMinBufferSize(sampleRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
-        if (inputBufferSize < 3 * sampleRate) inputBufferSize = 3 * sampleRate;
+        inputBufferSize = AudioRecord.getMinBufferSize(sampleRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT) * 2; // // FIXME: 18/01/16 Check if we need a bigger buffer!
+//        if (inputBufferSize < 3 * sampleRate) inputBufferSize = 3 * sampleRate;
         audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC, sampleRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, inputBufferSize);
 
         android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_URGENT_AUDIO);

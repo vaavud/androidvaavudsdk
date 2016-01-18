@@ -52,6 +52,8 @@ public class SleipnirController implements AudioListener, RotationReceiver, Dire
     private VolumeObserver volumeObserver;
     private SharedPreferences preferences;
 
+    private boolean active;
+
     private Throttle throttleSpeed = new Throttle(200);
 
     // debug
@@ -92,6 +94,8 @@ public class SleipnirController implements AudioListener, RotationReceiver, Dire
 
         audioPlayer.start();
         audioRecorder.start();
+
+        active = true;
     }
 
     public void stop() {
@@ -103,6 +107,8 @@ public class SleipnirController implements AudioListener, RotationReceiver, Dire
 
         appContext.getContentResolver().unregisterContentObserver(volumeObserver);
         audioManager.abandonAudioFocus(null);
+
+        active = false;
     }
 
 
@@ -111,29 +117,32 @@ public class SleipnirController implements AudioListener, RotationReceiver, Dire
 
         if (signalListener != null) signalListener.signalChanged(audioBuffer);
 
-//        audioProcessor.processSamples(sampleCounter, audioBuffer); // should be called before new Volume
-//        Float volume = volumeAdjust.newVolume(audioBuffer);
-//        if (volume != null) audioPlayer.setVolume(volume);
-
-        for (int i = 0; i < audioBuffer.length -1; i++) {
-            if (volumeHigh) {
-                if (Math.abs(audioBuffer[i]) + Math.abs(audioBuffer[i+1]) > 10000) {
-                    Log.d(TAG, "time to change UP: " + String.valueOf((sampleCounter + i) - lastChange) );
-                    lastChange = sampleCounter + i;
-                    volumeHigh = false;
-                    audioPlayer.setVolume(0.1f);
-                    break;
-                }
-            } else {
-                if (Math.abs(audioBuffer[i]) + Math.abs(audioBuffer[i+1]) < 50) {
-                    Log.d(TAG, "time to change Down: " + String.valueOf((sampleCounter + i) - lastChange) );
-                    lastChange = sampleCounter + i;
-                    volumeHigh = true;
-                    audioPlayer.setVolume(0.8f);
-                    break;
-                }
-            }
+        audioProcessor.processSamples(sampleCounter, audioBuffer); // should be called before new Volume
+        Float volume = volumeAdjust.newVolume(audioBuffer);
+        if (volume != null) {
+            if (signalListener != null) signalListener.signalChanged(0,0,volume);
+            audioPlayer.setVolume(volume);
         }
+
+//        for (int i = 0; i < audioBuffer.length -1; i++) {
+//            if (volumeHigh) {
+//                if (Math.abs(audioBuffer[i]) + Math.abs(audioBuffer[i+1]) > 10000) {
+//                    Log.d(TAG, "time to change UP: " + String.valueOf((sampleCounter + i) - lastChange) );
+//                    lastChange = sampleCounter + i;
+//                    volumeHigh = false;
+//                    audioPlayer.setVolume(0.1f);
+//                    break;
+//                }
+//            } else {
+//                if (Math.abs(audioBuffer[i]) + Math.abs(audioBuffer[i+1]) < 50) {
+//                    Log.d(TAG, "time to change Down: " + String.valueOf((sampleCounter + i) - lastChange) );
+//                    lastChange = sampleCounter + i;
+//                    volumeHigh = true;
+//                    audioPlayer.setVolume(0.8f);
+//                    break;
+//                }
+//            }
+//        }
         sampleCounter += audioBuffer.length;
     }
 
@@ -206,5 +215,9 @@ public class SleipnirController implements AudioListener, RotationReceiver, Dire
 
     public void setSignalListener(SignalListener signalListener) {
         this.signalListener = signalListener;
+    }
+
+    public boolean isActive() {
+        return active;
     }
 }

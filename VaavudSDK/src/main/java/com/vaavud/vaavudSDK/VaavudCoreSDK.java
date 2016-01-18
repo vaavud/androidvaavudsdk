@@ -8,6 +8,7 @@ import com.vaavud.vaavudSDK.mjolnir.MjolnirController;
 import com.vaavud.vaavudSDK.model.SpeedEvent;
 import com.vaavud.vaavudSDK.orientation.OrientationController;
 import com.vaavud.vaavudSDK.sleipnir.SleipnirController;
+import com.vaavud.vaavudSDK.sleipnir.listener.SignalListener;
 
 /**
  * Created by aokholm on 15/01/16.
@@ -18,11 +19,13 @@ public class VaavudCoreSDK implements SpeedListener{
 
     private SpeedListener speedListener;
     private StatusListener statusListener;
+    private SignalListener signalListener; // debug
 
     private SleipnirController _sleipnir;
     private MjolnirController _mjolnir;
     private OrientationController _orientation;
 
+    private boolean sleipnirActive;
 
     public VaavudCoreSDK(Context context) {
         this.context = context;
@@ -44,6 +47,7 @@ public class VaavudCoreSDK implements SpeedListener{
         orientation().setHeadingListener(sleipnir());
 
         sleipnir().setSpeedListener(this);
+        sleipnir().setSignalListener(signalListener);
 
         orientation().start();
         sleipnir().start();
@@ -81,6 +85,15 @@ public class VaavudCoreSDK implements SpeedListener{
 
     public void setStatusListener(StatusListener statusListener) {
         this.statusListener = statusListener;
+    }
+
+    // debug
+    public void setSignalListener(SignalListener signalListener) {
+        this.signalListener = signalListener;
+    }
+
+    public boolean isSleipnirActive() {
+        return sleipnir().isActive();
     }
 
     @Override
