@@ -51,7 +51,7 @@ public class RotationProcessor implements RotationReceiver {
 //        float[] angleCurve = new float[15];
 //        for (int i = 0; i < angleCurve.length; i++)
 //            angleCurve[i] = fitcurve[((tickEdgeAngle[i] - angleEstimator) + 360) % 360];
-//        signalListener.signalChanged(angularVelocities, angleCurve);
+//        signalListener.rawSignalChanged(angularVelocities, angleCurve);
 //    }
 //
 //    private void iterateAngle(float[] mvgRelativeSpeedPercent) {

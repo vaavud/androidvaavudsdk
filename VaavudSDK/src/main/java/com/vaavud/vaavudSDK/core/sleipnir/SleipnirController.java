@@ -6,22 +6,22 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.media.AudioManager;
+import android.util.Log;
 
 import com.vaavud.sleipnirSDK.R;
 import com.vaavud.vaavudSDK.core.VaavudError;
 import com.vaavud.vaavudSDK.core.listener.HeadingListener;
-import com.vaavud.vaavudSDK.core.orientation.OrientationController;
-import com.vaavud.vaavudSDK.core.sleipnir.audio.VolumeObserver;
+import com.vaavud.vaavudSDK.core.listener.SpeedListener;
+import com.vaavud.vaavudSDK.core.model.SpeedEvent;
 import com.vaavud.vaavudSDK.core.sleipnir.audio.AudioPlayer;
 import com.vaavud.vaavudSDK.core.sleipnir.audio.AudioRecorder;
 import com.vaavud.vaavudSDK.core.sleipnir.audio.VolumeAdjust;
+import com.vaavud.vaavudSDK.core.sleipnir.audio.VolumeObserver;
+import com.vaavud.vaavudSDK.core.sleipnir.listener.AnalysisListener;
 import com.vaavud.vaavudSDK.core.sleipnir.listener.AudioListener;
-import com.vaavud.vaavudSDK.core.sleipnir.listener.SignalListener;
-import com.vaavud.vaavudSDK.core.listener.SpeedListener;
-import com.vaavud.vaavudSDK.core.model.SpeedEvent;
 
 
-public class SleipnirController implements AudioListener, RotationReceiver, DirectionReceiver, HeadingListener {
+public class SleipnirController implements AudioListener, TickReceiver, RotationReceiver, DirectionReceiver, HeadingListener {
 
     private static final String TAG = "SDK:SleipnirWC";
 
@@ -46,7 +46,7 @@ public class SleipnirController implements AudioListener, RotationReceiver, Dire
     private RotationProcessor rotationProcessor;
     private VolumeAdjust volumeAdjust;
     private SpeedListener speedListener;
-    private SignalListener signalListener;
+    private AnalysisListener analysisListener;
 
     private VolumeObserver volumeObserver;
     private SharedPreferences preferences;
@@ -89,7 +89,7 @@ public class SleipnirController implements AudioListener, RotationReceiver, Dire
 
         rotationProcessor = new RotationProcessor(this);
         tickProcessor = new TickProcessor(this);
-        audioProcessor = new AudioProcessor(tickProcessor, processBufferSize);
+        audioProcessor = new AudioProcessor(this, processBufferSize);
 
         audioPlayer.start();
         audioRecorder.start();
@@ -114,39 +114,60 @@ public class SleipnirController implements AudioListener, RotationReceiver, Dire
     @Override
     public void newAudioBuffer(final short[] audioBuffer) {
 
-        if (signalListener != null) signalListener.signalChanged(audioBuffer);
+        if (analysisListener != null) analysisListener.newRawSignal(audioBuffer);
 
-        audioProcessor.processSamples(sampleCounter, audioBuffer); // should be called before new Volume
-        Float volume = volumeAdjust.newVolume(audioBuffer);
-        if (volume != null) {
-            if (signalListener != null) signalListener.signalChanged(0,0,volume);
-            audioPlayer.setVolume(volume);
+        boolean volumeAnalysis = false;
+
+        if (!volumeAnalysis) {
+            audioProcessor.processSamples(sampleCounter, audioBuffer); // should be called before new Volume
+            Float volume = volumeAdjust.newVolume(audioBuffer);
+            if (volume != null) {
+                if (analysisListener != null) analysisListener.volumeChanged(volume);
+                audioPlayer.setVolume(volume);
+            }
+        } else {
+            volumeChangeTime(audioBuffer);
         }
 
-//        for (int i = 0; i < audioBuffer.length -1; i++) {
-//            if (volumeHigh) {
-//                if (Math.abs(audioBuffer[i]) + Math.abs(audioBuffer[i+1]) > 10000) {
-//                    Log.d(TAG, "time to change UP: " + String.valueOf((sampleCounter + i) - lastChange) );
-//                    lastChange = sampleCounter + i;
-//                    volumeHigh = false;
-//                    audioPlayer.setVolume(0.1f);
-//                    break;
-//                }
-//            } else {
-//                if (Math.abs(audioBuffer[i]) + Math.abs(audioBuffer[i+1]) < 50) {
-//                    Log.d(TAG, "time to change Down: " + String.valueOf((sampleCounter + i) - lastChange) );
-//                    lastChange = sampleCounter + i;
-//                    volumeHigh = true;
-//                    audioPlayer.setVolume(0.8f);
-//                    break;
-//                }
-//            }
-//        }
         sampleCounter += audioBuffer.length;
+    }
+
+    private void volumeChangeTime(final short[] audioBuffer) {
+        for (int i = 0; i < audioBuffer.length -1; i++) {
+            if (volumeHigh) {
+                if (Math.abs(audioBuffer[i]) + Math.abs(audioBuffer[i+1]) > 10000) {
+                    Log.d(TAG, "time to change UP: " + String.valueOf((sampleCounter + i) - lastChange) );
+                    lastChange = sampleCounter + i;
+                    volumeHigh = false;
+                    audioPlayer.setVolume(0.1f);
+                    break;
+                }
+            } else {
+                if (Math.abs(audioBuffer[i]) + Math.abs(audioBuffer[i+1]) < 50) {
+                    Log.d(TAG, "time to change Down: " + String.valueOf((sampleCounter + i) - lastChange) );
+                    lastChange = sampleCounter + i;
+                    volumeHigh = true;
+                    audioPlayer.setVolume(0.8f);
+                    break;
+                }
+            }
+        }
     }
 
     private float windSpeed(float freq) {
         return freq > 0 ? freq * 0.325f + 0.2f : 0f;
+    }
+
+    @Override
+    public void newTick(Tick tick) {
+
+        int[] ticks = new int[3];
+        ticks[0] = tick.deltaTime;
+        ticks[1] = tick.deltaTime;
+        ticks[2] = tick.deltaTime;
+        analysisListener.newTicks(ticks);
+
+        tickProcessor.newTick(tick);
     }
 
     @Override
@@ -212,8 +233,8 @@ public class SleipnirController implements AudioListener, RotationReceiver, Dire
         this.speedListener = speedListener;
     }
 
-    public void setSignalListener(SignalListener signalListener) {
-        this.signalListener = signalListener;
+    public void setAnalysisListener(AnalysisListener analysisListener) {
+        this.analysisListener = analysisListener;
     }
 
     public boolean isActive() {
