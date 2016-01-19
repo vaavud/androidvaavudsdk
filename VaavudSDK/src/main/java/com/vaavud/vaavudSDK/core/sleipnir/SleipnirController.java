@@ -160,12 +160,13 @@ public class SleipnirController implements AudioListener, TickReceiver, Rotation
 
     @Override
     public void newTick(Tick tick) {
-
-        int[] ticks = new int[3];
-        ticks[0] = tick.deltaTime;
-        ticks[1] = tick.deltaTime;
-        ticks[2] = tick.deltaTime;
-        analysisListener.newTicks(ticks);
+        if (analysisListener != null) {
+            int[] ticks = new int[3];
+            ticks[0] = tick.deltaTime;
+            ticks[1] = tick.deltaTime;
+            ticks[2] = tick.deltaTime;
+            analysisListener.newTicks(ticks);
+        }
 
         tickProcessor.newTick(tick);
     }

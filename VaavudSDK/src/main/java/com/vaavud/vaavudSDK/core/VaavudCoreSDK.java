@@ -19,7 +19,7 @@ public class VaavudCoreSDK implements SpeedListener{
 
     private SpeedListener speedListener;
     private StatusListener statusListener;
-    private AnalysisListener analysisListener; // debug
+    private AnalysisListener analysisListener;
 
     private SleipnirController _sleipnir;
     private MjolnirController _mjolnir;
