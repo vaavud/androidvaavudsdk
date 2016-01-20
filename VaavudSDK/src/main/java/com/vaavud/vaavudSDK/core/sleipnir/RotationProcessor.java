@@ -1,5 +1,10 @@
 package com.vaavud.vaavudSDK.core.sleipnir;
 
+import com.vaavud.vaavudSDK.core.sleipnir.listener.DirectionReceiver;
+import com.vaavud.vaavudSDK.core.sleipnir.listener.RotationReceiver;
+import com.vaavud.vaavudSDK.core.sleipnir.model.Direction;
+import com.vaavud.vaavudSDK.core.sleipnir.model.Rotation;
+
 /**
  * Created by aokholm on 11/01/16.
  */

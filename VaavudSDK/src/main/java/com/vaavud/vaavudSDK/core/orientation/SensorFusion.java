@@ -38,7 +38,6 @@ import com.vaavud.vaavudSDK.core.listener.OrientationListener;
 import java.util.Timer;
 import java.util.TimerTask;
 
-
 public class SensorFusion implements SensorEventListener {
 
     private HeadingListener headingListener;
@@ -127,7 +126,7 @@ public class SensorFusion implements SensorEventListener {
     public void initListeners(){
         mSensorManager.registerListener(this,
             mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),
-            SensorManager.SENSOR_DELAY_FASTEST);
+            SensorManager.SENSOR_DELAY_UI);
      
         mSensorManager.registerListener(this,
             mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE),
@@ -135,7 +134,7 @@ public class SensorFusion implements SensorEventListener {
      
         mSensorManager.registerListener(this,
             mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD),
-            SensorManager.SENSOR_DELAY_FASTEST);
+            SensorManager.SENSOR_DELAY_UI);
     }
 
 	@Override
@@ -228,13 +227,13 @@ public class SensorFusion implements SensorEventListener {
 
             long dTLong = event.timestamp - timestamp;
 
+            // Some time the timestamps are broken (+- 4 seconds) this is a fix /Andreas
             if (Math.abs(dTLong) > 40000000) { // 40 miliseconds
                dTLong = 10000000; // 10 miliseconds
             }
 
             final float dT = dTLong * NS2S;
 
-//            Log.d("Ori", String.format("new: %d, last: %d, diff: %d", event.timestamp, timestamp, (event.timestamp-timestamp)));
             gyro = setInModifiedCordinateSystem(event.values);
             getRotationVectorFromGyro(gyro, deltaVector, dT / 2.0f);
         }

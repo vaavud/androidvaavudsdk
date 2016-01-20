@@ -2,7 +2,12 @@ package com.vaavud.vaavudSDK.core.sleipnir;
 
 import android.util.Log;
 
-public class TickProcessor implements TickReceiver{
+import com.vaavud.vaavudSDK.core.sleipnir.listener.RotationReceiver;
+import com.vaavud.vaavudSDK.core.sleipnir.listener.TickReceiver;
+import com.vaavud.vaavudSDK.core.sleipnir.model.Tick;
+import com.vaavud.vaavudSDK.core.sleipnir.model.Rotation;
+
+public class TickProcessor implements TickReceiver {
 
     private static int TEETH_PR_REV = 15;
 

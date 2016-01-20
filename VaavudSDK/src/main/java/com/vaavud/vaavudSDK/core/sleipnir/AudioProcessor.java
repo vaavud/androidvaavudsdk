@@ -1,10 +1,10 @@
 package com.vaavud.vaavudSDK.core.sleipnir;
 
 
+import com.vaavud.vaavudSDK.core.sleipnir.listener.TickReceiver;
+import com.vaavud.vaavudSDK.core.sleipnir.model.Tick;
+
 public class AudioProcessor {
-
-//    private static final String TAG = "SDK:AudioProcessing";
-
     private TickReceiver receiver;
 
     //Sound processing

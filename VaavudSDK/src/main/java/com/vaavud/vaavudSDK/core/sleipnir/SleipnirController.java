@@ -12,13 +12,19 @@ import com.vaavud.sleipnirSDK.R;
 import com.vaavud.vaavudSDK.core.VaavudError;
 import com.vaavud.vaavudSDK.core.listener.HeadingListener;
 import com.vaavud.vaavudSDK.core.listener.SpeedListener;
-import com.vaavud.vaavudSDK.core.model.SpeedEvent;
+import com.vaavud.vaavudSDK.core.model.event.SpeedEvent;
 import com.vaavud.vaavudSDK.core.sleipnir.audio.AudioPlayer;
 import com.vaavud.vaavudSDK.core.sleipnir.audio.AudioRecorder;
 import com.vaavud.vaavudSDK.core.sleipnir.audio.VolumeAdjust;
 import com.vaavud.vaavudSDK.core.sleipnir.audio.VolumeObserver;
 import com.vaavud.vaavudSDK.core.sleipnir.listener.AnalysisListener;
 import com.vaavud.vaavudSDK.core.sleipnir.listener.AudioListener;
+import com.vaavud.vaavudSDK.core.sleipnir.listener.DirectionReceiver;
+import com.vaavud.vaavudSDK.core.sleipnir.listener.RotationReceiver;
+import com.vaavud.vaavudSDK.core.sleipnir.listener.TickReceiver;
+import com.vaavud.vaavudSDK.core.sleipnir.model.Rotation;
+import com.vaavud.vaavudSDK.core.sleipnir.model.Tick;
+import com.vaavud.vaavudSDK.core.sleipnir.model.Direction;
 
 
 public class SleipnirController implements AudioListener, TickReceiver, RotationReceiver, DirectionReceiver, HeadingListener {
@@ -171,6 +177,11 @@ public class SleipnirController implements AudioListener, TickReceiver, Rotation
 
     @Override
     public void newRotation(Rotation rotation) {
+
+        if (analysisListener != null) {
+            analysisListener.newRotation(rotation);
+        }
+
 
         volumeAdjust.newRotation();
         rotationProcessor.newRotation(rotation);

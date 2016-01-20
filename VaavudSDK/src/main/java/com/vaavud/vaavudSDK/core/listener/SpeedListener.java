@@ -4,5 +4,5 @@ import com.vaavud.vaavudSDK.core.model.event.SpeedEvent;
 
 public interface SpeedListener {
 
-    public void speedChanged(SpeedEvent event);
+    void speedChanged(SpeedEvent event);
 }
