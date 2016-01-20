@@ -8,11 +8,11 @@ import android.content.SharedPreferences;
 import android.media.AudioManager;
 import android.util.Log;
 
-import com.vaavud.sleipnirSDK.R;
+import com.vaavud.vaavudSDK.R;
 import com.vaavud.vaavudSDK.core.VaavudError;
 import com.vaavud.vaavudSDK.core.listener.HeadingListener;
 import com.vaavud.vaavudSDK.core.listener.SpeedListener;
-import com.vaavud.vaavudSDK.core.model.SpeedEvent;
+import com.vaavud.vaavudSDK.core.model.event.SpeedEvent;
 import com.vaavud.vaavudSDK.core.sleipnir.audio.AudioPlayer;
 import com.vaavud.vaavudSDK.core.sleipnir.audio.AudioRecorder;
 import com.vaavud.vaavudSDK.core.sleipnir.audio.VolumeAdjust;

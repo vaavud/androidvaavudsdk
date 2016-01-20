@@ -10,9 +10,9 @@ public class SpeedEvent {
     public SpeedEvent() {
     }
 
-    public SpeedEvent(long time, float speed) {
-        this.time = time;
-        this.speed = speed;
+    public SpeedEvent(long _time, float _speed) {
+        time = _time;
+        speed = _speed;
     }
 
     public long getTime() {

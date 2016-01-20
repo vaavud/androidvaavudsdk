@@ -6,11 +6,13 @@ import android.util.Log;
 
 import com.vaavud.vaavudSDK.core.VaavudCoreSDK;
 import com.vaavud.vaavudSDK.core.VaavudError;
+import com.vaavud.vaavudSDK.core.listener.DirectionListener;
 import com.vaavud.vaavudSDK.core.listener.LocationEventListener;
 import com.vaavud.vaavudSDK.core.listener.SpeedListener;
 import com.vaavud.vaavudSDK.core.listener.StatusListener;
 import com.vaavud.vaavudSDK.core.location.LocationService;
 import com.vaavud.vaavudSDK.core.model.MeasureStatus;
+import com.vaavud.vaavudSDK.core.model.event.DirectionEvent;
 import com.vaavud.vaavudSDK.core.model.event.LocationEvent;
 import com.vaavud.vaavudSDK.core.model.event.SpeedEvent;
 import com.vaavud.vaavudSDK.core.model.event.VelocityEvent;
@@ -23,7 +25,7 @@ import java.util.Map;
 /**
  * Created by juan on 18/01/16.
  */
-public class VaavudSDK implements SpeedListener, LocationEventListener, StatusListener {
+public class VaavudSDK implements SpeedListener, DirectionListener, LocationEventListener, StatusListener {
 
 		private static final String TAG = "VaavudSDK";
 		private Context context;
@@ -32,12 +34,16 @@ public class VaavudSDK implements SpeedListener, LocationEventListener, StatusLi
 		private Config config;
 		private LocationService _location;
 
+		private Float windSpeedAvg;
+		private Float windSpeedMax;
+		private Float windDirection;
+
+
 
 		public VaavudSDK(Context _context, Map<String, Object> configuration) {
 				context = _context;
 				if (sdk == null) {
 						sdk = new VaavudCoreSDK(context);
-//						sdk.setSpeedListener(this);
 				}
 				config = new Config(configuration);
 
@@ -46,6 +52,7 @@ public class VaavudSDK implements SpeedListener, LocationEventListener, StatusLi
 		public void startSession() throws VaavudError {
 
 				session = new MeasurementSession();
+				session.startSession();
 				location().setEventListener(this);
 				location().start();
 
@@ -57,7 +64,8 @@ public class VaavudSDK implements SpeedListener, LocationEventListener, StatusLi
 		public void stopSession() throws VaavudError {
 
 //				session = new MeasurementSession();
-				location().start();
+				session.stopSession();
+				location().stop();
 				if (config.getWindMeter().equals(WindMeter.SLEIPNIR)) sdk.stopSleipnir();
 				else sdk.stopMjolnir();
 
@@ -81,9 +89,15 @@ public class VaavudSDK implements SpeedListener, LocationEventListener, StatusLi
 
 		@Override
 		public void speedChanged(SpeedEvent event) {
-
+				if (event.getSpeed() > windSpeedMax) windSpeedMax = event.getSpeed();
+				windSpeedAvg = (event.getSpeed() + session.getNumSpeedEvents()*windSpeedAvg)/(session.getNumSpeedEvents()+1);
+				session.addSpeedEvent(event);
 		}
 
+		@Override
+		public void newDirectionEvent(DirectionEvent event) {
+				session.addDirectionEvent(event);
+		}
 
 		@Override
 		public void statusChanged(MeasureStatus status) {
@@ -93,6 +107,7 @@ public class VaavudSDK implements SpeedListener, LocationEventListener, StatusLi
 		@Override
 		public void newLocation(LocationEvent event) {
 				Log.d(TAG, "New Location: " + event.getLocation());
+				session.addLocationEvent(event);
 		}
 
 		@Override
@@ -105,6 +120,9 @@ public class VaavudSDK implements SpeedListener, LocationEventListener, StatusLi
 		public void permisionError(String permission) {
 				Log.d(TAG, "Permission Error: "+permission);
 		}
+
+
+
 
 		class Config {
 				private WindMeter windMeter;
