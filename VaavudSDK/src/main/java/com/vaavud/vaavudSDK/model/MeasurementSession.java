@@ -7,122 +7,136 @@ package com.vaavud.vaavudSDK.model;
 import com.vaavud.vaavudSDK.core.model.event.DirectionEvent;
 import com.vaavud.vaavudSDK.core.model.event.LocationEvent;
 import com.vaavud.vaavudSDK.core.model.event.SpeedEvent;
+import com.vaavud.vaavudSDK.core.model.event.VelocityEvent;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
 public class MeasurementSession implements Serializable {
 
-		private String geoLocationNameLocalized;
-		private Date startTime;
-		private Date endTime;
-		private List<LocationEvent> location;
-		private List<SpeedEvent> speed;
-		private List<DirectionEvent> direction;
-		private WindMeter windMeter = WindMeter.MJOLNIR;
+    private String geoLocationNameLocalized;
+    private Date startTime;
+    private Date endTime;
+    private List<LocationEvent> location;
+    private List<SpeedEvent> speed;
+    private List<DirectionEvent> direction;
+    private List<VelocityEvent> velocity;
 
-		private Float altitude;
+    private WindMeter windMeter = WindMeter.MJOLNIR;
 
-		private Float temperature;
-		private Integer pressure;
-		private Float windChill;
-		private Float gustiness;
+    private Float altitude;
+
+    private Float temperature;
+    private Integer pressure;
+    private Float windChill;
+    private Float gustiness;
 
 
-		public MeasurementSession() {
-				super();
-		}
+    public MeasurementSession() {
+        super();
+        speed = new ArrayList<>();
+        location = new ArrayList<>();
+        direction = new ArrayList<>();
+        velocity = new ArrayList<>();
+    }
 
-		public void startSession(){
-				speed.clear();
-				location.clear();
-				direction.clear();
-				startTime = new Date();
-		}
+    public void startSession() {
+        speed.clear();
+        location.clear();
+        direction.clear();
+        startTime = new Date();
+    }
 
-		public void addSpeedEvent(SpeedEvent event){
-				speed.add(event);
-		}
-		public void addLocationEvent(LocationEvent event){
-				location.add(event);
-		}
-		public void addDirectionEvent(DirectionEvent event){
-				direction.add(event);
-		}
+    public void addSpeedEvent(SpeedEvent event) {
+        speed.add(event);
+    }
 
-		public MeasurementSession stopSession(){
-				endTime = new Date();
-				return this;
-		}
+    public void addLocationEvent(LocationEvent event) {
+        location.add(event);
+    }
 
-		public int getNumSpeedEvents(){
-				return speed.size();
-		}
+    public void addDirectionEvent(DirectionEvent event) {
+        direction.add(event);
+    }
 
-		public void setAltitude(Float altitude){
-				this.altitude = altitude;
-		}
+    public void addVelocityEvent(VelocityEvent event) {
+        velocity.add(event);
+    }
 
-		public Float getAltitude(){
-				return altitude;
-		}
+    public MeasurementSession stopSession() {
+        endTime = new Date();
+        return this;
+    }
 
-		public void setTemperature(Float temperature){
-				this.temperature=temperature;
-		}
+    public int getNumSpeedEvents() {
+        return speed.size();
+    }
 
-		public Float getTemperature(){
-				return temperature;
-		}
+    public void setAltitude(Float altitude) {
+        this.altitude = altitude;
+    }
 
-		public void setPressure(Integer pressure){
-				this.pressure=pressure;
-		}
+    public Float getAltitude() {
+        return altitude;
+    }
 
-		public Integer getPressure(){
-				return pressure;
-		}
+    public void setTemperature(Float temperature) {
+        this.temperature = temperature;
+    }
 
-		public void setWindChill(Float windChill){
-				this.windChill=windChill;
-		}
+    public Float getTemperature() {
+        return temperature;
+    }
 
-		public Float getWindChill(){
-				return windChill;
-		}
+    public void setPressure(Integer pressure) {
+        this.pressure = pressure;
+    }
 
-		public void setGustiness(Float gustiness){
-				this.gustiness=gustiness;
-		}
+    public Integer getPressure() {
+        return pressure;
+    }
 
-		public Float getGustiness(){
-				return gustiness;
-		}
+    public void setWindChill(Float windChill) {
+        this.windChill = windChill;
+    }
 
-		public String getGeoLocationNameLocalized() {
-				return geoLocationNameLocalized;
-		}
+    public Float getWindChill() {
+        return windChill;
+    }
 
-		public void setGeoLocationNameLocalized(String geoLocationNameLocalized) {
-				this.geoLocationNameLocalized = geoLocationNameLocalized;
-		}
+    public void setGustiness(Float gustiness) {
+        this.gustiness = gustiness;
+    }
 
-		public Date getStartTime() {
-				return startTime;
-		}
+    public Float getGustiness() {
+        return gustiness;
+    }
 
-		public Date getEndTime() {
-				return endTime;
-		}
+    public String getGeoLocationNameLocalized() {
+        return geoLocationNameLocalized;
+    }
 
-		public WindMeter getWindMeter() {
-				return windMeter;
-		}
+    public void setGeoLocationNameLocalized(String geoLocationNameLocalized) {
+        this.geoLocationNameLocalized = geoLocationNameLocalized;
+    }
 
-		public void setWindMeter(WindMeter windMeter) {
-				this.windMeter = windMeter;
-		}
+    public Date getStartTime() {
+        return startTime;
+    }
+
+    public Date getEndTime() {
+        return endTime;
+    }
+
+    public WindMeter getWindMeter() {
+        return windMeter;
+    }
+
+    public void setWindMeter(WindMeter windMeter) {
+        this.windMeter = windMeter;
+    }
 
 
 }
