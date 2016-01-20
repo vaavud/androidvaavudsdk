@@ -8,7 +8,7 @@ import android.content.SharedPreferences;
 import android.media.AudioManager;
 import android.util.Log;
 
-import com.vaavud.sleipnirSDK.R;
+import com.vaavud.vaavudSDK.R;
 import com.vaavud.vaavudSDK.core.VaavudError;
 import com.vaavud.vaavudSDK.core.listener.HeadingListener;
 import com.vaavud.vaavudSDK.core.listener.SpeedListener;

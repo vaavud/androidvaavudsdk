@@ -7,7 +7,7 @@ import com.vaavud.vaavudSDK.core.listener.OrientationListener;
 import com.vaavud.vaavudSDK.core.listener.SpeedListener;
 import com.vaavud.vaavudSDK.core.listener.StatusListener;
 import com.vaavud.vaavudSDK.core.mjolnir.MjolnirController;
-import com.vaavud.vaavudSDK.core.model.SpeedEvent;
+import com.vaavud.vaavudSDK.core.model.event.SpeedEvent;
 import com.vaavud.vaavudSDK.core.orientation.OrientationController;
 import com.vaavud.vaavudSDK.core.orientation.SensorFusion;
 import com.vaavud.vaavudSDK.core.sleipnir.SleipnirController;

@@ -1,14 +1,12 @@
 package com.vaavud.vaavudSDK.core.location;
 
 import android.content.Context;
-import android.content.pm.PackageManager;
+
 import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.v4.app.ActivityCompat;
 
 import com.vaavud.vaavudSDK.core.VaavudError;
 import com.vaavud.vaavudSDK.core.listener.LocationEventListener;
@@ -22,7 +20,7 @@ import static android.location.LocationManager.NETWORK_PROVIDER;
 /**
  * Created by juan on 19/01/16.
  */
-public class LocationService implements ActivityCompat.OnRequestPermissionsResultCallback {
+public class LocationService {
 
 		private static final int LOCATION_REQUEST_PERMISIONS = 500;
 		private static final long TWO_MINUTES = 1000L * 60L * 2L;
@@ -176,23 +174,6 @@ public class LocationService implements ActivityCompat.OnRequestPermissionsResul
 						return provider2 == null;
 				}
 				return provider1.equals(provider2);
-		}
-
-		@Override
-		public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-				if (requestCode == LOCATION_REQUEST_PERMISIONS) {
-						if (grantResults.length > 0 && grantResults.length == permissions.length) {
-								for (int i = 0; i < permissions.length; i++) {
-										if (grantResults[i] != PackageManager.PERMISSION_GRANTED) {
-												locationEventListener.permisionError(permissions[i]);
-												return;
-										}
-								}
-
-						} else {
-								locationEventListener.permisionError("No permisions granted");
-						}
-				}
 		}
 
 		public void setEventListener(LocationEventListener _locationEventListener) {
