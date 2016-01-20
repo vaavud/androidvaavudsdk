@@ -46,12 +46,15 @@ public class VaavudSDK implements SpeedListener, DirectionListener, LocationEven
         context = _context;
         if (sdk == null) {
             sdk = new VaavudCoreSDK(context);
+            sdk.setSpeedListener(this);
         }
         config = new Config(configuration);
 
     }
 
     public void startSession() throws VaavudError {
+        windSpeedAvg = 0.0f;
+        windSpeedMax = 0.0f;
 
         session = new MeasurementSession();
         session.startSession();
@@ -65,7 +68,8 @@ public class VaavudSDK implements SpeedListener, DirectionListener, LocationEven
 
     public void stopSession() throws VaavudError {
 
-//				session = new MeasurementSession();
+        Log.d(TAG,"SpeedAverage: "+windSpeedAvg);
+        Log.d(TAG,"SpeedMax: "+windSpeedMax);
         session.stopSession();
         location().stop();
         if (config.getWindMeter().equals(WindMeter.SLEIPNIR)) sdk.stopSleipnir();
