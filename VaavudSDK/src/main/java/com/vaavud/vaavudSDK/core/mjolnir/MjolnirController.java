@@ -6,7 +6,7 @@ import com.vaavud.vaavudSDK.core.listener.SpeedListener;
 import com.vaavud.vaavudSDK.core.listener.StatusListener;
 import com.vaavud.vaavudSDK.core.model.FreqAmp;
 import com.vaavud.vaavudSDK.core.model.MeasureStatus;
-import com.vaavud.vaavudSDK.core.model.SpeedEvent;
+import com.vaavud.vaavudSDK.core.model.event.SpeedEvent;
 import com.vaavud.vaavudSDK.core.orientation.OrientationController;
 
 public class MjolnirController implements FrequencyReceiver {

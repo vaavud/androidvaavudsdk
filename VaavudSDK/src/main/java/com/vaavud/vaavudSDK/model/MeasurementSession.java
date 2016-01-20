@@ -1,12 +1,12 @@
-package com.vaavud.vaavudSDK.core.model;
+package com.vaavud.vaavudSDK.model;
 
 /**
  * Created by juan on 18/01/16.
  */
 
-import android.database.Cursor;
-import java.io.Serializable;
+import com.vaavud.vaavudSDK.core.model.LatLng;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -59,79 +59,6 @@ public class MeasurementSession implements Serializable {
 				super();
 		}
 
-		public MeasurementSession(Cursor cursor) {
-				super();
-				//setLocalId(cursor.getLong(0));
-				setUuid(cursor.getString(1));
-				setDevice(cursor.getString(2));
-				setMeasuring(cursor.getInt(3) == 1);
-				setUploaded(cursor.getInt(4) == 1);
-				if (!cursor.isNull(5)) {
-						setStartIndex(cursor.getInt(5));
-				}
-				if (!cursor.isNull(6)) {
-						setEndIndex(cursor.getInt(6));
-				}
-				if (!cursor.isNull(7)) {
-						setTimezoneOffset(cursor.getLong(7));
-				}
-				if (!cursor.isNull(8)) {
-						setStartTime(new Date(cursor.getLong(8)));
-				}
-				if (!cursor.isNull(9)) {
-						setEndTime(new Date(cursor.getLong(9)));
-				}
-				if (!cursor.isNull(10) && !cursor.isNull(11)) {
-						try {
-//				Log.d("MEASUREMENT_SESSION","Measurement Latitude: "+cursor.getDouble(10)+" Measurement Longitude: "+cursor.getDouble(10));
-								setPosition(new LatLng(cursor.getDouble(10), cursor.getDouble(11)));
-						} catch (IllegalArgumentException e) {
-//				Log.d("MEASUREMENT_SESSION","Is Null");
-								//Log.e("MeasurementSession", "Invalid latitude or longitude: " + e.getMessage());
-								// ignore and leave null
-						}
-				}
-				if (!cursor.isNull(12)) {
-						setWindSpeedAvg(cursor.getFloat(12));
-				}
-				if (!cursor.isNull(13)) {
-						setWindSpeedMax(cursor.getFloat(13));
-				}
-				if (!cursor.isNull(14)) {
-						setWindDirection(cursor.getFloat(14));
-				}
-				if (!cursor.isNull(15)) {
-						setSource(cursor.getString(15));
-				}
-				if (!cursor.isNull(16)) {
-						setWindMeter(WindMeter.values()[cursor.getInt(16)]);
-				}
-				if (!cursor.isNull(17)) {
-						setGeoLocationNameLocalized(cursor.getString(17));
-				}
-				if(!cursor.isNull(18)){
-						setTemperature(cursor.getFloat(18));
-				}
-
-				if(!cursor.isNull(19)){
-						setPressure(cursor.getInt(19));
-				}
-
-				if(!cursor.isNull(20)){
-						setWindChill(cursor.getFloat(20));
-				}
-
-				if(!cursor.isNull(21)){
-						setIcon(cursor.getString(21));
-				}
-
-				if(!cursor.isNull(22)){
-						setGustiness(cursor.getFloat(22));
-				}
-
-
-		}
-
 		public void setAltitude(Float altitude){
 				this.altitude = altitude;
 		}
@@ -171,10 +98,6 @@ public class MeasurementSession implements Serializable {
 		public Float getGustiness(){
 				return gustiness;
 		}
-
-
-
-
 
 		public String getGeoLocationNameLocalized() {
 				return geoLocationNameLocalized;
@@ -328,6 +251,23 @@ public class MeasurementSession implements Serializable {
 				this.points = points;
 		}
 
+		public WindMeter getWindMeter() {
+				return windMeter;
+		}
+
+		public void setWindMeter(WindMeter windMeter) {
+				this.windMeter = windMeter;
+		}
+
+
+		public void setIcon(String icon){
+				this.icon = icon;
+		}
+
+		public String getIcon(){
+				return icon;
+		}
+
 		@Override
 		public boolean equals(Object object) {
 				MeasurementSession measurement = (MeasurementSession) object;
@@ -347,24 +287,5 @@ public class MeasurementSession implements Serializable {
 								+ ", windSpeedAvg=" + windSpeedAvg + ", windSpeedMax="
 								+ windSpeedMax + ", windDirection=" + windDirection + "]";
 		}
-
-		public WindMeter getWindMeter() {
-				return windMeter;
-		}
-
-		public void setWindMeter(WindMeter windMeter) {
-				this.windMeter = windMeter;
-		}
-
-
-		public void setIcon(String icon){
-				this.icon = icon;
-		}
-
-		public String getIcon(){
-				return icon;
-		}
-
-
 
 }

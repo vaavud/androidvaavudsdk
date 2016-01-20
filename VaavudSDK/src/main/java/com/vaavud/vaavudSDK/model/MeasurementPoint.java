@@ -1,4 +1,4 @@
-package com.vaavud.vaavudSDK.core.model;
+package com.vaavud.vaavudSDK.model;
 
 /**
  * Created by juan on 18/01/16.
