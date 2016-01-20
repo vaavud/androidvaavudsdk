@@ -10,6 +10,9 @@ import com.vaavud.vaavudSDK.core.sleipnir.model.Rotation;
  */
 public class RotationProcessor implements RotationReceiver {
 
+    float[] t = new float[15]; // compentation coefficeints
+    float[] ea = {0,23.5f,47.0f,70.5f,94.0f,117.5f,141.0f,164.5f,188.0f,211.5f,235.0f,258.5f,282.0f,305.5f,332.75f}; // encoder angles
+
     private DirectionReceiver receiver;
     public RotationProcessor(DirectionReceiver receiver) {
         this.receiver = receiver;
@@ -18,6 +21,36 @@ public class RotationProcessor implements RotationReceiver {
 
     @Override
     public void newRotation(Rotation rotation) {
+
+        float[] errorRMS = new float[4]; // the errorRMS
+        // find the fitting data
+        float[] wd = {0,90,180,270};
+
+        for (int i = 0; i < wd.length; i++) {
+            for (int j = 0; j < 15; i++) {
+
+                float angle = 360 - wd[0]; // subtract the wind direction that we are investigating
+
+                if (rotation.heading != null) {
+                    angle += rotation.heading; // // FIXME: 20/01/16 decision about heading
+                }
+                angle += ea[j]; // add encoder angle
+                angle = angle%360;
+
+                float f = fitcurve[(int) angle];
+
+                float diff =  rotation.relVelocities[j] - t[j] - f;
+
+                errorRMS[i] += diff*diff;
+            }
+        }
+
+
+
+
+        rotation.relVelocities
+
+
         receiver.newDirection(new Direction(0, 0, rotation.heading));
     }
 
