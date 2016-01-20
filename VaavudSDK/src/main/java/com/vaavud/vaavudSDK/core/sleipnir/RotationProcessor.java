@@ -6,6 +6,15 @@ package com.vaavud.vaavudSDK.core.sleipnir;
 public class RotationProcessor implements RotationReceiver {
 
     private DirectionReceiver receiver;
+    public RotationProcessor(DirectionReceiver receiver) {
+        this.receiver = receiver;
+    }
+
+
+    @Override
+    public void newRotation(Rotation rotation) {
+        receiver.newDirection(new Direction(0, 0, rotation.heading));
+    }
 
     private float[] fitcurve = {1.93055056304272F, 1.92754159835895F, 1.92282438491601F, 1.91642240663535F, 1.90836180821769F, 1.89867136590046F, 1.88738243346175F, 1.87452883370120F, 1.86014676759279F, 1.84427478518094F, 1.82695377850290F, 1.80822697586826F,
             1.78813992874676F, 1.76674047747091F, 1.74407866757061F, 1.72020656030400F, 1.69517800715690F, 1.66904843699963F, 1.64187464950645F, 1.61371462647876F, 1.58462740924956F, 1.55467305246007F, 1.52391260026944F, 1.49240801962532F, 1.46022202221808F,
@@ -36,111 +45,4 @@ public class RotationProcessor implements RotationReceiver {
             0.913248923637761F, 0.966090812760156F, 1.01801450649125F, 1.06896306768950F, 1.11888059184822F, 1.16771228860579F, 1.21540460253994F, 1.26190534933332F, 1.30716384843168F, 1.35113103633228F, 1.39375955096661F, 1.43500380728303F, 1.47482010511715F,
             1.51316681498404F, 1.55000456748550F, 1.58529639518708F, 1.61900783540342F, 1.65110697646223F, 1.68156447603108F, 1.71035356279630F, 1.73745001850842F, 1.76283212588682F, 1.78648061977600F, 1.80837868058991F, 1.82851194497160F, 1.84686852509262F,
             1.86343902222370F, 1.87821647622575F, 1.89119628770111F, 1.90237616864563F, 1.91175616824101F, 1.91933872768542F, 1.92512873506254F, 1.92913358874019F, 1.93136328313521F, 1.93183048501708F};
-
-    public RotationProcessor(DirectionReceiver receiver) {
-        this.receiver = receiver;
-    }
-
-    @Override
-    public void newRotation(Rotation rotation) {
-
-        receiver.newDirection(new Direction(0, 0, rotation.heading));
-    }
-
-//    if (signalListener != null) {
-//        float[] angleCurve = new float[15];
-//        for (int i = 0; i < angleCurve.length; i++)
-//            angleCurve[i] = fitcurve[((tickEdgeAngle[i] - angleEstimator) + 360) % 360];
-//        signalListener.rawSignalChanged(angularVelocities, angleCurve);
-//    }
-//
-//    private void iterateAngle(float[] mvgRelativeSpeedPercent) {
-//
-//        // SMALL NOTICE (ANGLES IN USE ARE EDGE ANGLESF, MIGHT BE BETTER TO CALCULATE EXCATE ANGLES!)
-//
-//        if (iteratorAngleCounter == 5) {
-//            checkOppositeAngle(mvgRelativeSpeedPercent);
-//            iteratorAngleCounter = 0;
-//        }
-//
-//        int angleLow = (int) Math.floor(angleEstimator - 0.5);
-//        int angleHigh = angleLow + 1;
-//
-//        if (angleLow < 0)
-//            angleLow += 360;
-//
-//        if (angleHigh > 360)
-//            angleHigh -= 360;
-//
-//        float angleLowSum = 0.0F;
-//        float angleHighSum = 0.0F;
-//
-//        for (int i = 0; i < TEETH_PR_REV; i++) {
-//
-//            int signalExpectedIndexLow = tickEdgeAngle[i] - angleLow;
-//            if (signalExpectedIndexLow < 0)
-//                signalExpectedIndexLow += 360;
-//
-//            int signalExpectedIndexHigh = tickEdgeAngle[i] - angleHigh;
-//            if (signalExpectedIndexHigh < 0)
-//                signalExpectedIndexHigh += 360;
-//
-//            angleLowSum += Math.pow(fitcurve[signalExpectedIndexLow] - mvgRelativeSpeedPercent[i], 2.0);
-//            angleHighSum += Math.pow(fitcurve[signalExpectedIndexHigh] - mvgRelativeSpeedPercent[i], 2.0);
-//        }
-//
-//        float angleHLDiff = (angleLowSum - angleHighSum) / (float) TEETH_PR_REV;
-//        angleEstimator += angleHLDiff * ANGLE_CORRRECTION_COEFFICIENT;
-//
-//        if (angleEstimator < 0) {
-//            angleEstimator += 360;
-//        }
-//
-//        if (angleEstimator > 360)
-//            angleEstimator -= 360;
-//
-//        iteratorAngleCounter++;
-//        velocityProfileError = angleLowSum;
-//
-//    }
-//
-//    private void checkOppositeAngle(float[] mvgRelativeSpeedPercent) {
-//
-//        // SMALL NOTICE (ANGLES IN USE ARE EDGE ANGLESF, MIGHT BE BETTER TO CALCULATE EXCATE ANGLES!)
-//
-//        int angleLow = (angleEstimator);
-//        int angleHigh = angleEstimator + 180;
-//
-//        if (angleLow < 0)
-//            angleLow += 360;
-//
-//        if (angleHigh > 360)
-//            angleHigh -= 360;
-//
-//        float angleLowSum = 0.0F;
-//        float angleHighSum = 0.0F;
-//
-//        for (int i = 0; i < TEETH_PR_REV; i++) {
-//
-//            int signalExpectedIndexLow = tickEdgeAngle[i] - angleLow;
-//            if (signalExpectedIndexLow < 0)
-//                signalExpectedIndexLow += 360;
-//
-//            int signalExpectedIndexHigh = tickEdgeAngle[i] - angleHigh;
-//            if (signalExpectedIndexHigh < 0)
-//                signalExpectedIndexHigh += 360;
-//
-//            angleLowSum += Math.pow(fitcurve[signalExpectedIndexLow] - mvgRelativeSpeedPercent[i], 2.0);
-//            angleHighSum += Math.pow(fitcurve[signalExpectedIndexHigh] - mvgRelativeSpeedPercent[i], 2.0);
-//        }
-//
-//        if (angleLowSum > angleHighSum) {
-//            angleEstimator += 180;
-//        }
-//        if (angleEstimator > 360) {
-//            angleEstimator -= 360;
-//        }
-//    }
-
-
 }

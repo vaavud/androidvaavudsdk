@@ -1,5 +1,7 @@
 package com.vaavud.vaavudSDK.core.sleipnir;
 
+import android.util.Log;
+
 public class TickProcessor implements TickReceiver{
 
     private static int TEETH_PR_REV = 15;
