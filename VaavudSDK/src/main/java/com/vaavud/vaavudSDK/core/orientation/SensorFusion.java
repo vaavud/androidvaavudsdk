@@ -78,7 +78,7 @@ public class SensorFusion implements SensorEventListener {
     
 	public static final int TIME_CONSTANT = 30;
 	public static final float FILTER_COEFFICIENT = 0.98f;
-	private Timer fuseTimer = new Timer();
+	private Timer fuseTimer;
 	
 
     public SensorFusion(Context context) {
@@ -86,6 +86,8 @@ public class SensorFusion implements SensorEventListener {
     }
 
     public void start() {
+
+        fuseTimer = new Timer();
 
         gyroOrientation[0] = 0.0f;
         gyroOrientation[1] = 0.0f;

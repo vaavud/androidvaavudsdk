@@ -1,7 +1,5 @@
 package com.vaavud.vaavudSDK.core.sleipnir;
 
-import android.util.Log;
-
 import com.vaavud.vaavudSDK.core.sleipnir.listener.RotationReceiver;
 import com.vaavud.vaavudSDK.core.sleipnir.listener.TickReceiver;
 import com.vaavud.vaavudSDK.core.sleipnir.model.Tick;
@@ -80,7 +78,6 @@ public class TickProcessor implements TickReceiver {
         teethIndex++;
         if (teethIndex == TEETH_PR_REV) {
             teethIndex = 0;
-            timeOneRotationLast = timeOneRotation;
         }
         teethProcessIndex++;
         if (teethProcessIndex == TEETH_PR_REV) {
@@ -98,13 +95,15 @@ public class TickProcessor implements TickReceiver {
             locateStart(tick.deltaTime);
         } else {
             if (velocity > 0.8 * lastVelocity && velocity < 1.2 * lastVelocity) {
-                if (teethIndex == 0) newRotation(tick);
+                if (teethIndex == 0) sendNewRotation(tick);
             } else {
                 resetDirectionAlgorithm();
                 tickDetectionErrorCount++;
             }
         }
-
+        if (teethIndex == 0) {
+            timeOneRotationLast = timeOneRotation;
+        }
         lastVelocity = velocity;
     }
 
@@ -118,7 +117,7 @@ public class TickProcessor implements TickReceiver {
         startLocated = false;
     }
 
-    private void newRotation(Tick tick) {
+    private void sendNewRotation(Tick tick) {
         rotationReceiver.newRotation(new Rotation(tick.time, timeOneRotation, relRotaionTime(), heading, velocities));
     }
 
