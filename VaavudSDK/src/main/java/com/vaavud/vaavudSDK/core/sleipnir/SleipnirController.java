@@ -10,6 +10,7 @@ import android.util.Log;
 
 import com.vaavud.vaavudSDK.R;
 import com.vaavud.vaavudSDK.core.VaavudError;
+import com.vaavud.vaavudSDK.core.listener.DirectionListener;
 import com.vaavud.vaavudSDK.core.listener.HeadingListener;
 import com.vaavud.vaavudSDK.core.listener.SpeedListener;
 import com.vaavud.vaavudSDK.core.model.event.SpeedEvent;
@@ -22,9 +23,9 @@ import com.vaavud.vaavudSDK.core.sleipnir.listener.AudioListener;
 import com.vaavud.vaavudSDK.core.sleipnir.listener.DirectionReceiver;
 import com.vaavud.vaavudSDK.core.sleipnir.listener.RotationReceiver;
 import com.vaavud.vaavudSDK.core.sleipnir.listener.TickReceiver;
+import com.vaavud.vaavudSDK.core.sleipnir.model.Direction;
 import com.vaavud.vaavudSDK.core.sleipnir.model.Rotation;
 import com.vaavud.vaavudSDK.core.sleipnir.model.Tick;
-import com.vaavud.vaavudSDK.core.sleipnir.model.Direction;
 
 
 public class SleipnirController implements AudioListener, TickReceiver, RotationReceiver, DirectionReceiver, HeadingListener {
@@ -51,13 +52,16 @@ public class SleipnirController implements AudioListener, TickReceiver, Rotation
     private TickProcessor tickProcessor;
     private RotationProcessor rotationProcessor;
     private VolumeAdjust volumeAdjust;
-    private SpeedListener speedListener;
+
     private AnalysisListener analysisListener;
 
     private VolumeObserver volumeObserver;
     private SharedPreferences preferences;
 
     private boolean active;
+
+    private SpeedListener speedListener;
+    private DirectionListener directionListener;
 
     private Throttle throttleSpeed = new Throttle(200);
 
@@ -231,7 +235,10 @@ public class SleipnirController implements AudioListener, TickReceiver, Rotation
 
     @Override
     public void newDirection(Direction direction) {
-//        Log.d("TAG", direction.globalDirection);
+        long eventTime = startTime + (int) (1000 * direction.time / (float) sampleRate);
+//        if (throttleSpeed.shouldSend(eventTime))
+//            directionListener.newDirectionEvent(new DirectionEvent(eventTime, direction.globalDirection));
+
     }
 
     @Override

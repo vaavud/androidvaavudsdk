@@ -2,6 +2,7 @@ package com.vaavud.vaavudSDK.core;
 
 import android.content.Context;
 
+import com.vaavud.vaavudSDK.core.listener.DirectionListener;
 import com.vaavud.vaavudSDK.core.listener.HeadingListener;
 import com.vaavud.vaavudSDK.core.listener.OrientationListener;
 import com.vaavud.vaavudSDK.core.listener.SpeedListener;
@@ -25,6 +26,7 @@ public class VaavudCoreSDK implements SpeedListener, HeadingListener {
     private AnalysisListener analysisListener;
     private OrientationListener orientationListener;
     private HeadingListener headingListener;
+    private DirectionListener directionListener;
 
     private SleipnirController _sleipnir;
     private MjolnirController _mjolnir;
@@ -82,21 +84,25 @@ public class VaavudCoreSDK implements SpeedListener, HeadingListener {
         return _orientation;
     }
 
-    public void setSpeedListener(SpeedListener speedListener) {
-        this.speedListener = speedListener;
+    public void setSpeedListener(SpeedListener _speedListener) {
+        speedListener = _speedListener;
     }
 
-    public void setStatusListener(StatusListener statusListener) {
-        this.statusListener = statusListener;
+    public void setStatusListener(StatusListener _statusListener) {
+        statusListener = _statusListener;
+    }
+
+    public void setDirectionListener(DirectionListener _directionListener){
+        directionListener = _directionListener;
     }
 
     // debug
-    public void setAnalysisListener(AnalysisListener analysisListener) {
-        this.analysisListener = analysisListener;
+    public void setAnalysisListener(AnalysisListener _analysisListener) {
+        analysisListener = _analysisListener;
     }
 
-    public void setHeadingListener(HeadingListener headingListener) {
-        this.headingListener = headingListener;
+    public void setHeadingListener(HeadingListener _headingListener) {
+        headingListener = _headingListener;
     }
 
     public void setOrientationListener(OrientationListener orientationListener) {
