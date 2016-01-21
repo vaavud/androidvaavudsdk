@@ -10,8 +10,10 @@ import android.util.Log;
 
 import com.vaavud.vaavudSDK.R;
 import com.vaavud.vaavudSDK.core.VaavudError;
+import com.vaavud.vaavudSDK.core.listener.DirectionListener;
 import com.vaavud.vaavudSDK.core.listener.HeadingListener;
 import com.vaavud.vaavudSDK.core.listener.SpeedListener;
+import com.vaavud.vaavudSDK.core.model.event.DirectionEvent;
 import com.vaavud.vaavudSDK.core.model.event.SpeedEvent;
 import com.vaavud.vaavudSDK.core.sleipnir.audio.AudioPlayer;
 import com.vaavud.vaavudSDK.core.sleipnir.audio.AudioRecorder;
@@ -42,16 +44,15 @@ public class SleipnirController implements AudioListener, TickReceiver, Rotation
     private long startTime;
     private long sampleCounter;
 
-
-    private Float[] coefficients;
-
     private AudioPlayer audioPlayer;
     private AudioRecorder audioRecorder;
     private AudioProcessor audioProcessor;
     private TickProcessor tickProcessor;
-    private RotationProcessor rotationProcessor;
+    public RotationProcessor rotationProcessor; // for debuging
     private VolumeAdjust volumeAdjust;
+
     private SpeedListener speedListener;
+    private DirectionListener directionListener;
     private AnalysisListener analysisListener;
 
     private VolumeObserver volumeObserver;
@@ -78,7 +79,6 @@ public class SleipnirController implements AudioListener, TickReceiver, Rotation
         volumeObserver = new VolumeObserver(mContext);
         appContext.getContentResolver().registerContentObserver(android.provider.Settings.System.CONTENT_URI, true, volumeObserver);
 
-
         startTime = System.currentTimeMillis();
         sampleCounter = 0;
 
@@ -92,8 +92,8 @@ public class SleipnirController implements AudioListener, TickReceiver, Rotation
         volumeHigh = false;
         audioPlayer.setVolume(0.1f);
 
-
         rotationProcessor = new RotationProcessor(this);
+        rotationProcessor.setAnalysisListener(analysisListener);
         tickProcessor = new TickProcessor(this);
         audioProcessor = new AudioProcessor(this, processBufferSize);
 
@@ -231,7 +231,7 @@ public class SleipnirController implements AudioListener, TickReceiver, Rotation
 
     @Override
     public void newDirection(Direction direction) {
-//        Log.d("TAG", direction.globalDirection);
+        directionListener.newDirectionEvent(new DirectionEvent(direction.time, direction.direction));
     }
 
     @Override
@@ -241,6 +241,10 @@ public class SleipnirController implements AudioListener, TickReceiver, Rotation
 
     public void setSpeedListener(SpeedListener speedListener) {
         this.speedListener = speedListener;
+    }
+
+    public void setDirectionListener(DirectionListener directionListener) {
+        this.directionListener = directionListener;
     }
 
     public void setAnalysisListener(AnalysisListener analysisListener) {

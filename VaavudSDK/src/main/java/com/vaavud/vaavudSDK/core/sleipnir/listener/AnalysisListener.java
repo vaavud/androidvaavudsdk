@@ -7,4 +7,5 @@ public interface AnalysisListener {
 	void volumeChanged(float volumeLevel);
 	void newTicks(int[] ticks);
 	void newRotation(Rotation rotation);
+	void newError(float[] errors);
 }

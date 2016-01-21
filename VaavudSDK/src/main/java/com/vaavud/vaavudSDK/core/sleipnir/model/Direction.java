@@ -6,12 +6,10 @@ package com.vaavud.vaavudSDK.core.sleipnir.model;
 
 public class Direction {
     public final long time;
-    public final float globalDirection;
-    public final float heading;
+    public final float direction;
 
-    public Direction(long time, float globalDirection, float heading) {
+    public Direction(long time, float direction) {
         this.time = time;
-        this.globalDirection = globalDirection;
-        this.heading = heading;
+        this.direction = direction;
     }
 }

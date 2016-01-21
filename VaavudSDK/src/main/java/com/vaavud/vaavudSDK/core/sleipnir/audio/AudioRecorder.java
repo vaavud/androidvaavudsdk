@@ -62,7 +62,7 @@ public class AudioRecorder extends Thread {
                     audioListener.newAudioBuffer(buffer);
                 }
             } catch (Throwable x) {
-                Log.w(TAG, "Error reading voice audio" + x.getMessage());
+                Log.w(TAG, "Error reading voice audio: " + x.getMessage());
                 stopped = true;
             }
         }

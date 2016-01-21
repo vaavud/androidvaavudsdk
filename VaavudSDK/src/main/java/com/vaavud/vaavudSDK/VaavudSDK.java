@@ -88,6 +88,9 @@ public class VaavudSDK implements SpeedListener, DirectionListener, LocationEven
         return sdk.isSleipnirActive();
     }
 
+    
+    // // FIXME: 21/01/16 concider removing and ask users to access to the SDKCore directly
+    
     public void setSpeedListener(SpeedListener speedListener) {
         sdk.setSpeedListener(speedListener);
     }
@@ -97,9 +100,21 @@ public class VaavudSDK implements SpeedListener, DirectionListener, LocationEven
     public void setHeadingListener(HeadingListener headingListener) {
         sdk.setHeadingListener(headingListener);
     }
+
+    public void setDirectionListener(DirectionListener directionListener){
+        sdk.setDirectionListener(directionListener);
+    }
+
     public void setAnalysisListener(AnalysisListener analysisListener){
         sdk.setAnalysisListener(analysisListener);
     }
+    // FIXME: 21/01/16 END fix
+
+
+    public VaavudCoreSDK getSdk() {
+        return sdk;
+    }
+
     @Override
     public void speedChanged(SpeedEvent event) {
         if (event.getSpeed() > windSpeedMax) windSpeedMax = event.getSpeed();

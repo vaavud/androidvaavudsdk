@@ -2,25 +2,29 @@ package com.vaavud.vaavudSDK.core;
 
 import android.content.Context;
 
+import com.vaavud.vaavudSDK.core.listener.DirectionListener;
 import com.vaavud.vaavudSDK.core.listener.HeadingListener;
 import com.vaavud.vaavudSDK.core.listener.OrientationListener;
 import com.vaavud.vaavudSDK.core.listener.SpeedListener;
 import com.vaavud.vaavudSDK.core.listener.StatusListener;
 import com.vaavud.vaavudSDK.core.mjolnir.MjolnirController;
+import com.vaavud.vaavudSDK.core.model.event.DirectionEvent;
 import com.vaavud.vaavudSDK.core.model.event.SpeedEvent;
 import com.vaavud.vaavudSDK.core.orientation.OrientationController;
 import com.vaavud.vaavudSDK.core.orientation.SensorFusion;
 import com.vaavud.vaavudSDK.core.sleipnir.SleipnirController;
 import com.vaavud.vaavudSDK.core.sleipnir.listener.AnalysisListener;
+import com.vaavud.vaavudSDK.core.sleipnir.model.Direction;
 
 /**
  * Created by aokholm on 15/01/16.
  */
-public class VaavudCoreSDK implements SpeedListener, HeadingListener {
+public class VaavudCoreSDK implements SpeedListener, DirectionListener, HeadingListener {
 
     Context context;
 
     private SpeedListener speedListener;
+    private DirectionListener directionListener;
     private StatusListener statusListener;
     private AnalysisListener analysisListener;
     private OrientationListener orientationListener;
@@ -51,6 +55,7 @@ public class VaavudCoreSDK implements SpeedListener, HeadingListener {
 
         sleipnir().setSpeedListener(this);
         sleipnir().setAnalysisListener(analysisListener);
+        sleipnir().setDirectionListener(this);
 
         orientation().start();
         sleipnir().start();
@@ -68,7 +73,7 @@ public class VaavudCoreSDK implements SpeedListener, HeadingListener {
         return _mjolnir;
     }
 
-    private SleipnirController sleipnir() {
+    public SleipnirController sleipnir() { // for debugging
         if (_sleipnir == null) {
             _sleipnir = new SleipnirController(context);
         }
@@ -99,6 +104,10 @@ public class VaavudCoreSDK implements SpeedListener, HeadingListener {
         this.headingListener = headingListener;
     }
 
+    public void setDirectionListener(DirectionListener directionListener) {
+        this.directionListener = directionListener;
+    }
+
     public void setOrientationListener(OrientationListener orientationListener) {
         orientation().setOrientationListener(orientationListener);
     }
@@ -110,6 +119,13 @@ public class VaavudCoreSDK implements SpeedListener, HeadingListener {
     @Override
     public void speedChanged(SpeedEvent event) {
         this.speedListener.speedChanged(event);
+    }
+
+    @Override
+    public void newDirectionEvent(DirectionEvent event) {
+        if (directionListener != null) {
+            this.directionListener.newDirectionEvent(event);
+        }
     }
 
     @Override

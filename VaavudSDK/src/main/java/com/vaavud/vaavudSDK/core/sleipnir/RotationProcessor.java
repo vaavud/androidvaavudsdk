@@ -1,5 +1,6 @@
 package com.vaavud.vaavudSDK.core.sleipnir;
 
+import com.vaavud.vaavudSDK.core.sleipnir.listener.AnalysisListener;
 import com.vaavud.vaavudSDK.core.sleipnir.listener.DirectionReceiver;
 import com.vaavud.vaavudSDK.core.sleipnir.listener.RotationReceiver;
 import com.vaavud.vaavudSDK.core.sleipnir.model.Direction;
@@ -10,51 +11,18 @@ import com.vaavud.vaavudSDK.core.sleipnir.model.Rotation;
  */
 public class RotationProcessor implements RotationReceiver {
 
-    float[] t = new float[15]; // compentation coefficeints
-    float[] ea = {0,23.5f,47.0f,70.5f,94.0f,117.5f,141.0f,164.5f,188.0f,211.5f,235.0f,258.5f,282.0f,305.5f,332.75f}; // encoder angles
+    AnalysisListener analysisListener;
 
-    private DirectionReceiver receiver;
-    public RotationProcessor(DirectionReceiver receiver) {
-        this.receiver = receiver;
-    }
+    final int TPR = 15;
+    float[] t = new float[TPR]; // compentation coefficeints
+    final float[] ea = {0,23.5f,47.0f,70.5f,94.0f,117.5f,141.0f,164.5f,188.0f,211.5f,235.0f,258.5f,282.0f,305.5f,332.75f}; // encoder angles
+    int wdCount = 16;
+    float[] wd = new float[wdCount];
+    float[][] comp = new float[wdCount][TPR];
 
+    RotationGroup rg;
 
-    @Override
-    public void newRotation(Rotation rotation) {
-
-        float[] errorRMS = new float[4]; // the errorRMS
-        // find the fitting data
-        float[] wd = {0,90,180,270};
-
-        for (int i = 0; i < wd.length; i++) {
-            for (int j = 0; j < 15; i++) {
-
-                float angle = 360 - wd[0]; // subtract the wind direction that we are investigating
-
-                if (rotation.heading != null) {
-                    angle += rotation.heading; // // FIXME: 20/01/16 decision about heading
-                }
-                angle += ea[j]; // add encoder angle
-                angle = angle%360;
-
-                float f = fitcurve[(int) angle];
-
-                float diff =  rotation.relVelocities[j] - t[j] - f;
-
-                errorRMS[i] += diff*diff;
-            }
-        }
-
-
-
-
-        rotation.relVelocities
-
-
-        receiver.newDirection(new Direction(0, 0, rotation.heading));
-    }
-
-    private float[] fitcurve = {1.93055056304272F, 1.92754159835895F, 1.92282438491601F, 1.91642240663535F, 1.90836180821769F, 1.89867136590046F, 1.88738243346175F, 1.87452883370120F, 1.86014676759279F, 1.84427478518094F, 1.82695377850290F, 1.80822697586826F,
+    float[] fitcurvePercent = {1.93055056304272F, 1.92754159835895F, 1.92282438491601F, 1.91642240663535F, 1.90836180821769F, 1.89867136590046F, 1.88738243346175F, 1.87452883370120F, 1.86014676759279F, 1.84427478518094F, 1.82695377850290F, 1.80822697586826F,
             1.78813992874676F, 1.76674047747091F, 1.74407866757061F, 1.72020656030400F, 1.69517800715690F, 1.66904843699963F, 1.64187464950645F, 1.61371462647876F, 1.58462740924956F, 1.55467305246007F, 1.52391260026944F, 1.49240801962532F, 1.46022202221808F,
             1.42741784194637F, 1.39405900931661F, 1.36020913199620F, 1.32593169153717F, 1.29128981914961F, 1.25634600129292F, 1.22116175831135F, 1.18579734303049F, 1.15031150113437F, 1.11476127584804F, 1.07920182312177F, 1.04368623722990F, 1.00826539680125F,
             0.972987817770956F, 0.937899532389511F, 0.903043996582429F, 0.868462039649354F, 0.834191843341422F, 0.800268955749256F, 0.766726343538812F, 0.733594507605786F, 0.700901592353379F, 0.668673415622578F, 0.636933467547068F, 0.605702923030820F,
@@ -83,4 +51,167 @@ public class RotationProcessor implements RotationReceiver {
             0.913248923637761F, 0.966090812760156F, 1.01801450649125F, 1.06896306768950F, 1.11888059184822F, 1.16771228860579F, 1.21540460253994F, 1.26190534933332F, 1.30716384843168F, 1.35113103633228F, 1.39375955096661F, 1.43500380728303F, 1.47482010511715F,
             1.51316681498404F, 1.55000456748550F, 1.58529639518708F, 1.61900783540342F, 1.65110697646223F, 1.68156447603108F, 1.71035356279630F, 1.73745001850842F, 1.76283212588682F, 1.78648061977600F, 1.80837868058991F, 1.82851194497160F, 1.84686852509262F,
             1.86343902222370F, 1.87821647622575F, 1.89119628770111F, 1.90237616864563F, 1.91175616824101F, 1.91933872768542F, 1.92512873506254F, 1.92913358874019F, 1.93136328313521F, 1.93183048501708F};
+
+    float[] fitcurve = new float[fitcurvePercent.length];
+
+
+    private DirectionReceiver receiver;
+    public RotationProcessor(DirectionReceiver receiver) {
+        this.receiver = receiver;
+
+        for (int i = 0; i < wdCount; i++) {
+            wd[i] = 360/ (float) wdCount * i;
+        }
+        rg = new RotationGroup(wd);
+
+        for (int i = 0; i < fitcurvePercent.length; i++) {
+            fitcurve[i] = fitcurvePercent[i]/100;
+        }
+    }
+
+
+    @Override
+    public void newRotation(Rotation rotation) {
+        rg.addRotation(rotation);
+        if (rg.isFull()) {
+            receiver.newDirection(new Direction(rg.time, rg.getWindDirection()));
+
+            if (analysisListener != null) {
+                analysisListener.newError(rg.error);
+            }
+
+            insertIntoComp(rg.getWindDirectionIdx(), rg.getRelVelAvg());
+
+            estimateT();
+
+            rg = new RotationGroup(wd);
+        }
+    }
+
+    class RotationGroup {
+
+        int countMax = 100;
+        int totalTimeMax = 22050;
+        float[] relVelSum = new float[TPR];
+        float[] error;
+        float[] wd;
+        int count = 0;
+        int totalTime = 0;
+        long time;
+
+        public RotationGroup(float[] wd) {
+            this.wd = wd;
+            this.error = new float[wd.length];
+        }
+
+        void addRotation(Rotation rotation) {
+            count += 1;
+            totalTime += rotation.timeOneRotation;
+            time = rotation.time;
+            relVelSum = add(relVelSum, rotation.relVelocities);
+            error = add(error, errorForRotation(rotation, wd));
+        }
+
+        boolean isFull() {
+            return count >= countMax || totalTime >= totalTimeMax;
+        }
+
+        float getWindDirection() {
+            return wd[findMinIdx(error)];
+        }
+        int getWindDirectionIdx() {
+            return findMinIdx(error);
+        }
+
+
+        float[] getRelVelAvg() {
+
+            float[] result = new float[TPR];
+            for (int i = 0; i < TPR; i++) {
+                result[i] = relVelSum[i]/count;
+            }
+            return result;
+        }
+    }
+
+    public int findMinIdx(float[] a) {
+        float minVal = a[0]; // Keeps a running count of the smallest value so far
+        int minIdx = 0; // Will store the index of minVal
+        for(int idx=1; idx<a.length; idx++) {
+            if(a[idx] < minVal) {
+                minVal = a[idx];
+                minIdx = idx;
+            }
+        }
+        return minIdx;
+    }
+
+    float[] errorForRotation(Rotation rotation, float[] wd) {
+        float[] errorRMS = new float[wd.length]; // the errorRMS
+
+        for (int i = 0; i < wd.length; i++) {
+            for (int j = 0; j < TPR; j++) {
+
+                float angle = 360 - wd[i]; // subtract the wind direction that we are investigating
+                if (rotation.heading != null) {
+                    angle += rotation.heading; // // FIXME: 20/01/16 decision about heading
+                }
+                angle += ea[j]; // add encoder angle
+                angle = angle%360;
+
+                float f = fitcurve[(int) angle];
+
+                float diff =  rotation.relVelocities[j] - t[j] - f;
+
+                errorRMS[i] += diff*diff;
+            }
+        }
+
+        return errorRMS;
+    }
+
+    void estimateT () {
+
+        float[] d = new float[TPR];
+        float[] f = new float[TPR];
+
+        for (int i = 0; i < wd.length; i++) {
+            if (comp[i][0] == 0) break; // for unfilled angles
+
+            for (int j = 0; j < TPR; j++) {
+                float angle = 360 - wd[i];
+                angle += ea[j]; // add encoder angle
+                angle = angle%360;
+                f[j] += fitcurve[(int) angle];
+                d[j] += comp[i][j];
+            }
+        }
+        t = sub(d,f);
+    }
+
+    void insertIntoComp(int wdIdx, float[] velocites) {
+        for (int i = 0; i < TPR; i++) {
+            comp[wdIdx][i] = velocites[i];
+        }
+    }
+
+    public void setAnalysisListener(AnalysisListener analysisListener) {
+        this.analysisListener = analysisListener;
+    }
+
+    float[] add(float[] a, float[] b) {
+        if (a.length != b.length) throw new RuntimeException("array length is not equal");
+        for (int i = 0; i < a.length; i++) {
+            a[i] = a[i] + b[i];
+        }
+        return a;
+    }
+
+    float[] sub(float[] a, float[] b) {
+        if (a.length != b.length) throw new RuntimeException("array length is not equal");
+        for (int i = 0; i < a.length; i++) {
+            a[i] = a[i] - b[i];
+        }
+        return a;
+    }
 }
