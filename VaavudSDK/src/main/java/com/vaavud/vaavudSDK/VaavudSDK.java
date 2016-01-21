@@ -2,6 +2,7 @@ package com.vaavud.vaavudSDK;
 
 
 import android.content.Context;
+import android.os.Handler;
 import android.util.Log;
 
 import com.vaavud.vaavudSDK.core.VaavudCoreSDK;
@@ -25,10 +26,12 @@ import com.vaavud.vaavudSDK.model.WindMeter;
 import java.util.Iterator;
 import java.util.Map;
 
+
+
 /**
  * Created by juan on 18/01/16.
  */
-public class VaavudSDK implements SpeedListener, DirectionListener, LocationEventListener, StatusListener {
+public class VaavudSDK implements SpeedListener, DirectionListener, LocationEventListener, OrientationListener, StatusListener {
 
     private static final String TAG = "VaavudSDK";
     private Context context;
@@ -37,9 +40,31 @@ public class VaavudSDK implements SpeedListener, DirectionListener, LocationEven
     private Config config;
     private LocationService _location;
 
+    private SpeedListener vaavudSpeed;
+    private DirectionListener vaavudDirection;
+    private LocationEventListener vaavudLocation;
+    private OrientationListener vaavudOrientation;
+
+
     private Float windSpeedAvg;
     private Float windSpeedMax;
     private Float windDirection;
+
+
+
+    private final Handler handler;
+
+    private Runnable sendData = new Runnable() {
+        @Override
+        public void run(){
+            Log.d(TAG, String.valueOf(session.getLastSpeedEvent().getTime()));
+            if (vaavudSpeed!=null) vaavudSpeed.speedChanged(session.getLastSpeedEvent());
+
+//            if (vaavudDirection!=null) vaavudDirection.newDirectionEvent(session.getLastDirectionEvent());
+//            if (vaavudLocation!=null) vaavudLocation.newLocation(session.getLastLocationEvent());
+            handler.postDelayed(this,config.getUpdateFrequency());
+        }
+    };
 
 
     public VaavudSDK(Context _context, Map<String, Object> configuration) {
@@ -49,6 +74,7 @@ public class VaavudSDK implements SpeedListener, DirectionListener, LocationEven
             sdk.setSpeedListener(this);
         }
         config = new Config(configuration);
+        handler = new Handler();
 
     }
 
@@ -64,12 +90,15 @@ public class VaavudSDK implements SpeedListener, DirectionListener, LocationEven
         if (config.getWindMeter().equals(WindMeter.SLEIPNIR)) sdk.startSleipnir();
         else sdk.startMjolnir();
 
+        handler.postDelayed(sendData,config.getUpdateFrequency());
+
     }
 
     public void stopSession() throws VaavudError {
 
         Log.d(TAG,"SpeedAverage: "+windSpeedAvg);
         Log.d(TAG,"SpeedMax: "+windSpeedMax);
+        handler.removeCallbacks(sendData);
         session.stopSession();
         location().stop();
         if (config.getWindMeter().equals(WindMeter.SLEIPNIR)) sdk.stopSleipnir();
@@ -92,10 +121,19 @@ public class VaavudSDK implements SpeedListener, DirectionListener, LocationEven
     // // FIXME: 21/01/16 concider removing and ask users to access to the SDKCore directly
     
     public void setSpeedListener(SpeedListener speedListener) {
-        sdk.setSpeedListener(speedListener);
+        sdk.setSpeedListener(this);
+        vaavudSpeed = speedListener;
     }
+
+    public void setDirectionListener(DirectionListener directionListener) {
+        sdk.setDirectionListener(this);
+        vaavudDirection = directionListener;
+    }
+
+
     public void setOrientationListener(OrientationListener orientationListener) {
-        sdk.setOrientationListener(orientationListener);
+        sdk.setOrientationListener(this);
+        vaavudOrientation = orientationListener;
     }
     public void setHeadingListener(HeadingListener headingListener) {
         sdk.setHeadingListener(headingListener);
@@ -120,6 +158,7 @@ public class VaavudSDK implements SpeedListener, DirectionListener, LocationEven
         if (event.getSpeed() > windSpeedMax) windSpeedMax = event.getSpeed();
         windSpeedAvg = (event.getSpeed() + session.getNumSpeedEvents() * windSpeedAvg) / (session.getNumSpeedEvents() + 1);
         session.addSpeedEvent(event);
+//        vaavudSpeed.speedChanged(event);
     }
 
     @Override
@@ -147,6 +186,11 @@ public class VaavudSDK implements SpeedListener, DirectionListener, LocationEven
     @Override
     public void permisionError(String permission) {
         Log.d(TAG, "Permission Error: " + permission);
+    }
+
+    @Override
+    public void newOrientation(float x, float y, float z) {
+
     }
 
 

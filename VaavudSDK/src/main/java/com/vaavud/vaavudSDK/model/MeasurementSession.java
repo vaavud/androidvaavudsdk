@@ -4,6 +4,8 @@ package com.vaavud.vaavudSDK.model;
  * Created by juan on 18/01/16.
  */
 
+import android.util.Log;
+
 import com.vaavud.vaavudSDK.core.model.event.DirectionEvent;
 import com.vaavud.vaavudSDK.core.model.event.LocationEvent;
 import com.vaavud.vaavudSDK.core.model.event.SpeedEvent;
@@ -16,6 +18,7 @@ import java.util.List;
 
 public class MeasurementSession implements Serializable {
 
+    private static final String TAG = "MeaSession";
     private String geoLocationNameLocalized;
     private Date startTime;
     private Date endTime;
@@ -23,6 +26,8 @@ public class MeasurementSession implements Serializable {
     private List<SpeedEvent> speed;
     private List<DirectionEvent> direction;
     private List<VelocityEvent> velocity;
+
+    private int lastSpeedDispached = 0;
 
     private WindMeter windMeter = WindMeter.MJOLNIR;
 
@@ -63,6 +68,23 @@ public class MeasurementSession implements Serializable {
 
     public void addVelocityEvent(VelocityEvent event) {
         velocity.add(event);
+    }
+
+    public SpeedEvent getLastSpeedEvent(){
+        int newIndex = speed.size()-1;
+        Log.d(TAG,"last: "+lastSpeedDispached + " new: "+newIndex);
+
+        if (lastSpeedDispached <= newIndex){
+            lastSpeedDispached = newIndex;
+            return speed.get(lastSpeedDispached);
+        }
+        return new SpeedEvent(0,0);
+    }
+    public LocationEvent getLastLocationEvent(){
+        return location.get(location.size()-1);
+    }
+    public DirectionEvent getLastDirectionEvent(){
+        return direction.get(direction.size()-1);
     }
 
     public MeasurementSession stopSession() {

@@ -24,9 +24,9 @@ import com.vaavud.vaavudSDK.core.sleipnir.listener.AudioListener;
 import com.vaavud.vaavudSDK.core.sleipnir.listener.DirectionReceiver;
 import com.vaavud.vaavudSDK.core.sleipnir.listener.RotationReceiver;
 import com.vaavud.vaavudSDK.core.sleipnir.listener.TickReceiver;
+import com.vaavud.vaavudSDK.core.sleipnir.model.Direction;
 import com.vaavud.vaavudSDK.core.sleipnir.model.Rotation;
 import com.vaavud.vaavudSDK.core.sleipnir.model.Tick;
-import com.vaavud.vaavudSDK.core.sleipnir.model.Direction;
 
 
 public class SleipnirController implements AudioListener, TickReceiver, RotationReceiver, DirectionReceiver, HeadingListener {
@@ -53,12 +53,16 @@ public class SleipnirController implements AudioListener, TickReceiver, Rotation
 
     private SpeedListener speedListener;
     private DirectionListener directionListener;
+
     private AnalysisListener analysisListener;
 
     private VolumeObserver volumeObserver;
     private SharedPreferences preferences;
 
     private boolean active;
+
+    private SpeedListener speedListener;
+    private DirectionListener directionListener;
 
     private Throttle throttleSpeed = new Throttle(200);
 
