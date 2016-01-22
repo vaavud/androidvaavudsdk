@@ -31,10 +31,6 @@ import com.vaavud.vaavudSDK.core.sleipnir.model.Tick;
 
 public class SleipnirController implements AudioListener, TickReceiver, RotationReceiver, DirectionReceiver, HeadingListener {
 
-    private SpeedListener speedListener;
-    private DirectionListener directionListener;
-    private AnalysisListener analysisListener;
-
     private static final String TAG = "SDK:SleipnirWC";
 
     private Context mContext;
@@ -55,11 +51,20 @@ public class SleipnirController implements AudioListener, TickReceiver, Rotation
     public RotationProcessor rotationProcessor; // for debuging
     private VolumeAdjust volumeAdjust;
 
+<<<<<<< HEAD
+    private SpeedListener speedListener;
+    private DirectionListener directionListener;
+=======
+>>>>>>> 5ae459cde5d69334f1d12d63a8d97dc46c90d6b5
+    private AnalysisListener analysisListener;
 
     private VolumeObserver volumeObserver;
     private SharedPreferences preferences;
 
     private boolean active;
+
+    private SpeedListener speedListener;
+    private DirectionListener directionListener;
 
     private Throttle throttleSpeed = new Throttle(200);
 
@@ -183,6 +188,7 @@ public class SleipnirController implements AudioListener, TickReceiver, Rotation
             analysisListener.newRotation(rotation);
         }
 
+
         volumeAdjust.newRotation();
         rotationProcessor.newRotation(rotation);
 
@@ -231,7 +237,14 @@ public class SleipnirController implements AudioListener, TickReceiver, Rotation
 
     @Override
     public void newDirection(Direction direction) {
+<<<<<<< HEAD
         directionListener.newDirectionEvent(new DirectionEvent(direction.time, direction.direction));
+=======
+        long eventTime = startTime + (int) (1000 * direction.time / (float) sampleRate);
+//        if (throttleSpeed.shouldSend(eventTime))
+//            directionListener.newDirectionEvent(new DirectionEvent(eventTime, direction.globalDirection));
+
+>>>>>>> 5ae459cde5d69334f1d12d63a8d97dc46c90d6b5
     }
 
     @Override

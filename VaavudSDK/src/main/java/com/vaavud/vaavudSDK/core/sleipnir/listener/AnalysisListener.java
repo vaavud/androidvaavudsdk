@@ -8,4 +8,5 @@ public interface AnalysisListener {
 	void newTicks(int[] ticks);
 	void newRotation(Rotation rotation);
 	void newError(float[] errors);
+    void newRotationGroup(float[] relVels);
 }

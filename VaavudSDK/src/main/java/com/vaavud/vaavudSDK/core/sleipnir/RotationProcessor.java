@@ -14,11 +14,11 @@ public class RotationProcessor implements RotationReceiver {
     AnalysisListener analysisListener;
 
     final int TPR = 15;
-    float[] t = new float[TPR]; // compentation coefficeints
-    final float[] ea = {0,23.5f,47.0f,70.5f,94.0f,117.5f,141.0f,164.5f,188.0f,211.5f,235.0f,258.5f,282.0f,305.5f,332.75f}; // encoder angles
+    public float[] t = new float[TPR]; // compentation coefficeints
+    public final float[] ea = {0,23.5f,47.0f,70.5f,94.0f,117.5f,141.0f,164.5f,188.0f,211.5f,235.0f,258.5f,282.0f,305.5f,332.75f}; // encoder angles
     int wdCount = 16;
     float[] wd = new float[wdCount];
-    float[][] comp = new float[wdCount][TPR];
+    public float[][] comp = new float[wdCount][TPR];
 
     RotationGroup rg;
 
@@ -52,7 +52,7 @@ public class RotationProcessor implements RotationReceiver {
             1.51316681498404F, 1.55000456748550F, 1.58529639518708F, 1.61900783540342F, 1.65110697646223F, 1.68156447603108F, 1.71035356279630F, 1.73745001850842F, 1.76283212588682F, 1.78648061977600F, 1.80837868058991F, 1.82851194497160F, 1.84686852509262F,
             1.86343902222370F, 1.87821647622575F, 1.89119628770111F, 1.90237616864563F, 1.91175616824101F, 1.91933872768542F, 1.92512873506254F, 1.92913358874019F, 1.93136328313521F, 1.93183048501708F};
 
-    float[] fitcurve = new float[fitcurvePercent.length];
+    public float[] fitcurve = new float[fitcurvePercent.length];
 
 
     private DirectionReceiver receiver;
@@ -78,10 +78,10 @@ public class RotationProcessor implements RotationReceiver {
 
             if (analysisListener != null) {
                 analysisListener.newError(rg.error);
+                analysisListener.newRotationGroup(rg.getRelVelAvg());
             }
 
             insertIntoComp(rg.getWindDirectionIdx(), rg.getRelVelAvg());
-
             estimateT();
 
             rg = new RotationGroup(wd);
@@ -89,7 +89,6 @@ public class RotationProcessor implements RotationReceiver {
     }
 
     class RotationGroup {
-
         int countMax = 100;
         int totalTimeMax = 22050;
         float[] relVelSum = new float[TPR];
@@ -174,9 +173,9 @@ public class RotationProcessor implements RotationReceiver {
 
         float[] d = new float[TPR];
         float[] f = new float[TPR];
-
+        int dataCount = 0;
         for (int i = 0; i < wd.length; i++) {
-            if (comp[i][0] == 0) break; // for unfilled angles
+            if (comp[i][0] == 0) continue; // for unfilled angles
 
             for (int j = 0; j < TPR; j++) {
                 float angle = 360 - wd[i];
@@ -185,8 +184,9 @@ public class RotationProcessor implements RotationReceiver {
                 f[j] += fitcurve[(int) angle];
                 d[j] += comp[i][j];
             }
+            dataCount++;
         }
-        t = sub(d,f);
+        t = divide(sub(d,f), (float) dataCount);
     }
 
     void insertIntoComp(int wdIdx, float[] velocites) {
@@ -211,6 +211,13 @@ public class RotationProcessor implements RotationReceiver {
         if (a.length != b.length) throw new RuntimeException("array length is not equal");
         for (int i = 0; i < a.length; i++) {
             a[i] = a[i] - b[i];
+        }
+        return a;
+    }
+
+    float[] divide(float[] a, float b) {
+        for (int i = 0; i < a.length; i++) {
+            a[i] = a[i]/b;
         }
         return a;
     }

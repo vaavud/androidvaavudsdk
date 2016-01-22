@@ -40,10 +40,10 @@ public class VaavudSDK implements SpeedListener, DirectionListener, LocationEven
     private Config config;
     private LocationService _location;
 
-    private SpeedListener vaavudSpeed;
-    private DirectionListener vaavudDirection;
-    private LocationEventListener vaavudLocation;
-    private OrientationListener vaavudOrientation;
+//    private SpeedListener vaavudSpeed;
+//    private DirectionListener vaavudDirection;
+//    private LocationEventListener vaavudLocation;
+//    private OrientationListener vaavudOrientation;
 
 
     private Float windSpeedAvg;
@@ -58,7 +58,7 @@ public class VaavudSDK implements SpeedListener, DirectionListener, LocationEven
         @Override
         public void run(){
             Log.d(TAG, String.valueOf(session.getLastSpeedEvent().getTime()));
-            if (vaavudSpeed!=null) vaavudSpeed.speedChanged(session.getLastSpeedEvent());
+//            if (vaavudSpeed!=null) vaavudSpeed.speedChanged(session.getLastSpeedEvent());
 
 //            if (vaavudDirection!=null) vaavudDirection.newDirectionEvent(session.getLastDirectionEvent());
 //            if (vaavudLocation!=null) vaavudLocation.newLocation(session.getLastLocationEvent());
@@ -119,33 +119,33 @@ public class VaavudSDK implements SpeedListener, DirectionListener, LocationEven
 
     
     // // FIXME: 21/01/16 concider removing and ask users to access to the SDKCore directly
-    
-    public void setSpeedListener(SpeedListener speedListener) {
-        sdk.setSpeedListener(this);
-        vaavudSpeed = speedListener;
-    }
-
-    public void setDirectionListener(DirectionListener directionListener) {
-        sdk.setDirectionListener(this);
-        vaavudDirection = directionListener;
-    }
-
-
-    public void setOrientationListener(OrientationListener orientationListener) {
-        sdk.setOrientationListener(this);
-        vaavudOrientation = orientationListener;
-    }
-    public void setHeadingListener(HeadingListener headingListener) {
-        sdk.setHeadingListener(headingListener);
-    }
-
-    public void setDirectionListener(DirectionListener directionListener){
-        sdk.setDirectionListener(directionListener);
-    }
-
-    public void setAnalysisListener(AnalysisListener analysisListener){
-        sdk.setAnalysisListener(analysisListener);
-    }
+//
+//    public void setSpeedListener(SpeedListener speedListener) {
+//        sdk.setSpeedListener(this);
+//        vaavudSpeed = speedListener;
+//    }
+//
+//    public void setDirectionListener(DirectionListener directionListener) {
+//        sdk.setDirectionListener(this);
+//        vaavudDirection = directionListener;
+//    }
+//
+//
+//    public void setOrientationListener(OrientationListener orientationListener) {
+//        sdk.setOrientationListener(this);
+//        vaavudOrientation = orientationListener;
+//    }
+//    public void setHeadingListener(HeadingListener headingListener) {
+//        sdk.setHeadingListener(headingListener);
+//    }
+//
+//    public void setDirectionListener(DirectionListener directionListener){
+//        sdk.setDirectionListener(directionListener);
+//    }
+//
+//    public void setAnalysisListener(AnalysisListener analysisListener){
+//        sdk.setAnalysisListener(analysisListener);
+//    }
     // FIXME: 21/01/16 END fix
 
 
