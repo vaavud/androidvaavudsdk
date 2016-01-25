@@ -108,6 +108,10 @@ public class VaavudCoreSDK implements SpeedListener, DirectionListener, HeadingL
         orientation().setOrientationListener(orientationListener);
     }
 
+    public void resetSleipnir() { // only while not running
+        sleipnir().resetStoredValues();
+    }
+
     public boolean isSleipnirActive() {
         return sleipnir().isActive();
     }

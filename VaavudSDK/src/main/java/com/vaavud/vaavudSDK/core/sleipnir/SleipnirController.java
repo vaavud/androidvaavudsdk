@@ -52,12 +52,12 @@ public class SleipnirController implements AudioListener, TickReceiver, Rotation
     private AudioRecorder audioRecorder;
     private AudioProcessor audioProcessor;
     private TickProcessor tickProcessor;
-    public RotationProcessor rotationProcessor; // for debuging
-    private VolumeAdjust volumeAdjust;
+    public RotationProcessor rotationProcessor; // public for debuging
+    public VolumeAdjust volumeAdjust; // public for debuging
 
 
     private VolumeObserver volumeObserver;
-    private SharedPreferences preferences;
+    private SharedPreferences sharedPreferences;
 
     private boolean active;
 
@@ -70,7 +70,7 @@ public class SleipnirController implements AudioListener, TickReceiver, Rotation
     public SleipnirController(Context context) {
         mContext = context;
         appContext = mContext.getApplicationContext();
-        preferences = appContext.getSharedPreferences("SleipnirSDKPreferences", Context.MODE_PRIVATE);
+        sharedPreferences = appContext.getSharedPreferences("SleipnirSDKPreferences", Context.MODE_PRIVATE);
     }
 
     public void start() throws VaavudError {
@@ -87,13 +87,13 @@ public class SleipnirController implements AudioListener, TickReceiver, Rotation
 
         audioPlayer = new AudioPlayer();
         audioRecorder = new AudioRecorder(this, processBufferSize);
-        volumeAdjust = new VolumeAdjust(processBufferSize, audioRecorder.getBufferSize(), preferences.getFloat("playerVolume", 0.5f));
+        volumeAdjust = new VolumeAdjust(processBufferSize, audioRecorder.getBufferSize(), sharedPreferences);
         audioPlayer.setVolume(volumeAdjust.getVolume());
         // debug
         volumeHigh = false;
         audioPlayer.setVolume(0.1f);
 
-        rotationProcessor = new RotationProcessor(this);
+        rotationProcessor = new RotationProcessor(this, sharedPreferences);
         rotationProcessor.setAnalysisListener(analysisListener);
         tickProcessor = new TickProcessor(this);
         audioProcessor = new AudioProcessor(this, processBufferSize);
@@ -109,7 +109,8 @@ public class SleipnirController implements AudioListener, TickReceiver, Rotation
         audioPlayer.end();
         audioRecorder.end();
 
-        saveVolume();
+        volumeAdjust.stop();
+        rotationProcessor.stop();
 
         appContext.getContentResolver().unregisterContentObserver(volumeObserver);
         audioManager.abandonAudioFocus(null);
@@ -216,11 +217,6 @@ public class SleipnirController implements AudioListener, TickReceiver, Rotation
         alert.show();
     }
 
-    private void saveVolume() {
-        SharedPreferences.Editor editor = preferences.edit();
-        editor.putFloat("playerVolume", volumeAdjust.getVolume());
-        editor.apply();
-    }
 
     private void checkVolume() {
         final int maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
@@ -253,5 +249,14 @@ public class SleipnirController implements AudioListener, TickReceiver, Rotation
 
     public boolean isActive() {
         return active;
+    }
+
+    public void resetStoredValues() {
+        if (!active) {
+            sharedPreferences.edit().clear().apply();
+        } else {
+            Log.e(TAG, "Resetting while the measurement is live doens't work!");
+        }
+
     }
 }

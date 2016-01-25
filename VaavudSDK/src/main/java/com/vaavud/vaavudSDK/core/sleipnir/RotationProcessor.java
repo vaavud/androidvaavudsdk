@@ -1,10 +1,19 @@
 package com.vaavud.vaavudSDK.core.sleipnir;
 
+import android.content.SharedPreferences;
+import android.util.Log;
+
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import com.vaavud.vaavudSDK.core.sleipnir.listener.AnalysisListener;
 import com.vaavud.vaavudSDK.core.sleipnir.listener.DirectionReceiver;
 import com.vaavud.vaavudSDK.core.sleipnir.listener.RotationReceiver;
 import com.vaavud.vaavudSDK.core.sleipnir.model.Direction;
 import com.vaavud.vaavudSDK.core.sleipnir.model.Rotation;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Created by aokholm on 11/01/16.
@@ -12,6 +21,7 @@ import com.vaavud.vaavudSDK.core.sleipnir.model.Rotation;
 public class RotationProcessor implements RotationReceiver {
 
     AnalysisListener analysisListener;
+    SharedPreferences sharedPreferences;
 
     final int TPR = 15;
     public float[] t = new float[TPR]; // compentation coefficeints
@@ -21,6 +31,10 @@ public class RotationProcessor implements RotationReceiver {
     public float[][] comp = new float[wdCount][TPR];
 
     RotationGroup rg;
+    RotationGroup rgCalibration;
+
+    final static int rgTimeMax = 30000;
+    final static int rgCalibrationTimeMax = 50000;
 
     float[] fitcurvePercent = {1.93055056304272F, 1.92754159835895F, 1.92282438491601F, 1.91642240663535F, 1.90836180821769F, 1.89867136590046F, 1.88738243346175F, 1.87452883370120F, 1.86014676759279F, 1.84427478518094F, 1.82695377850290F, 1.80822697586826F,
             1.78813992874676F, 1.76674047747091F, 1.74407866757061F, 1.72020656030400F, 1.69517800715690F, 1.66904843699963F, 1.64187464950645F, 1.61371462647876F, 1.58462740924956F, 1.55467305246007F, 1.52391260026944F, 1.49240801962532F, 1.46022202221808F,
@@ -56,22 +70,30 @@ public class RotationProcessor implements RotationReceiver {
 
 
     private DirectionReceiver receiver;
-    public RotationProcessor(DirectionReceiver receiver) {
+    public RotationProcessor(DirectionReceiver receiver, SharedPreferences sharedPreferences) {
         this.receiver = receiver;
+        this.sharedPreferences = sharedPreferences;
 
         for (int i = 0; i < wdCount; i++) {
             wd[i] = 360/ (float) wdCount * i;
         }
-        rg = new RotationGroup(wd);
+        rg = new RotationGroup(wd, rgTimeMax);
+        rgCalibration = new RotationGroup(wd, rgCalibrationTimeMax);
 
         for (int i = 0; i < fitcurvePercent.length; i++) {
             fitcurve[i] = fitcurvePercent[i]/100;
         }
+
+        this.comp = loadCoef(sharedPreferences);
+        t = estimateT(comp);
     }
 
 
     @Override
     public void newRotation(Rotation rotation) {
+
+        if (!steady(rotation)) return;
+
         rg.addRotation(rotation);
         if (rg.isFull()) {
             receiver.newDirection(new Direction(rg.time, rg.getWindDirection()));
@@ -81,25 +103,42 @@ public class RotationProcessor implements RotationReceiver {
                 analysisListener.newRotationGroup(rg.getRelVelAvg());
             }
 
-            insertIntoComp(rg.getWindDirectionIdx(), rg.getRelVelAvg());
-            estimateT();
-
-            rg = new RotationGroup(wd);
+            rg = new RotationGroup(wd, rgTimeMax);
         }
+
+        if (calibrationSpeed(rotation)) {
+            rgCalibration.addRotation(rotation);
+            if (rgCalibration.isFull()) {
+                insertIntoComp(rgCalibration.getWindDirectionIdx(), rgCalibration.getRelVelAvg());
+                t = estimateT(comp);
+                rgCalibration = new RotationGroup(wd, rgCalibrationTimeMax);
+            }
+        }
+
+
+    }
+
+    private boolean steady(Rotation rotation) {
+        return Math.abs(rotation.relRotationTime) < 0.04;
+    }
+
+    private boolean calibrationSpeed(Rotation rotation) {
+        return rotation.timeOneRotation > 700 && rotation.timeOneRotation < 5000; // increase slightly compared to android for better testing.
     }
 
     class RotationGroup {
         int countMax = 100;
-        int totalTimeMax = 22050;
+        int totalTimeMax;
         float[] relVelSum = new float[TPR];
         float[] error;
         float[] wd;
-        int count = 0;
-        int totalTime = 0;
+        int count;
+        int totalTime;
         long time;
 
-        public RotationGroup(float[] wd) {
+        public RotationGroup(float[] wd, int totalTimeMax) {
             this.wd = wd;
+            this.totalTimeMax = totalTimeMax;
             this.error = new float[wd.length];
         }
 
@@ -124,7 +163,6 @@ public class RotationProcessor implements RotationReceiver {
 
 
         float[] getRelVelAvg() {
-
             float[] result = new float[TPR];
             for (int i = 0; i < TPR; i++) {
                 result[i] = relVelSum[i]/count;
@@ -169,7 +207,7 @@ public class RotationProcessor implements RotationReceiver {
         return errorRMS;
     }
 
-    void estimateT () {
+    float[] estimateT (float[][] comp) {
 
         float[] d = new float[TPR];
         float[] f = new float[TPR];
@@ -186,7 +224,7 @@ public class RotationProcessor implements RotationReceiver {
             }
             dataCount++;
         }
-        t = divide(sub(d,f), (float) dataCount);
+        return divide(sub(d,f), (float) dataCount);
     }
 
     void insertIntoComp(int wdIdx, float[] velocites) {
@@ -197,6 +235,10 @@ public class RotationProcessor implements RotationReceiver {
 
     public void setAnalysisListener(AnalysisListener analysisListener) {
         this.analysisListener = analysisListener;
+    }
+
+    public float[][] getComp() {
+        return comp;
     }
 
     float[] add(float[] a, float[] b) {
@@ -220,5 +262,52 @@ public class RotationProcessor implements RotationReceiver {
             a[i] = a[i]/b;
         }
         return a;
+    }
+
+    private float[][] loadCoef(SharedPreferences pref) {
+        float[][] coef = new float[wdCount][TPR];
+
+        String json = pref.getString("comp", null);
+        if (json == null) {
+            return coef;
+        }
+
+        ArrayList<ArrayList<Float>> out = new Gson().fromJson(json, new TypeToken<ArrayList<ArrayList<Float>>>() {}.getType());
+
+        int i = 0;
+        for (ArrayList<Float> o : out) {
+            int j = 0;
+            for (Float f : o) {
+                coef[i][j++] = f; // crash if float is not a number or null
+            }
+            i++;
+        }
+
+        return coef;
+    }
+
+    private void saveCoef(SharedPreferences pref, float[][] coef) {
+        SharedPreferences.Editor editor = pref.edit();
+
+        ArrayList<ArrayList<Float>> out = new ArrayList<>();
+        for (int i = 0; i < comp.length; i++) {
+            ArrayList<Float> in = new ArrayList<>();
+            out.add(in);
+            for (int j = 0; j < comp[0].length; j++) {
+                in.add(coef[i][j]);
+            }
+        }
+
+        String json = new Gson().toJson(out);
+        editor.putString("comp", json);
+        editor.apply();
+    }
+
+    public void reset() {
+        comp = new float[comp.length][comp[0].length];
+    }
+
+    public void stop() {
+        saveCoef(sharedPreferences, comp);
     }
 }
