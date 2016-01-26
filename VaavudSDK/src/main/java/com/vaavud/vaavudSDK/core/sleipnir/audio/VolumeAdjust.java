@@ -122,7 +122,7 @@ public class VolumeAdjust {
 
         switch (volState) {
             case DIFF_STATE:
-                Log.d(TAG, "DIFF_STATE");
+//                Log.d(TAG, "DIFF_STATE");
                 float noiseDiff = Math.abs(diff20 - NOISE_THRESHOLD);
 
                 if (diff20 >= NOISE_THRESHOLD) volumeChange = (float) VOLUME_STEPS * -noiseDiff;
@@ -135,7 +135,7 @@ public class VolumeAdjust {
                 break;
 
             case SEQUENTIALSEARCH_STATE:
-                Log.d(TAG, "SEQUENTIALSEARCH_STATE");
+//                Log.d(TAG, "SEQUENTIALSEARCH_STATE");
                 volumeLevel = (int) (volumeCounter % 20 * (VOLUME_STEPS / 20.0f) + VOLUME_STEPS / 40.0f); // 5, 15, 25 ... 95
                 if (volumeCounter > 45) returnToDiffState();
                 if (sQ > 6.0 && rotationDetected) volState = STEEPESTASCENT_STATE;
@@ -143,7 +143,7 @@ public class VolumeAdjust {
                 break;
 
             case STEEPESTASCENT_STATE:
-                Log.d(TAG, "STEEPESTASCENT_STATE");
+//                Log.d(TAG, "STEEPESTASCENT_STATE");
                 boolean signalIsGood = (sQ > 1.2 && rotationDetected);
                 if (signalIsGood) {
 //                    sQVolume[volumeLevel] = sQ; //sQVolume[volumeLevel] == 0.0f ? sQ : sQVolume[volumeLevel] * 0.7f + sQ * 0.3f;

@@ -26,7 +26,7 @@ public class RotationProcessor implements RotationReceiver {
     final int TPR = 15;
     public float[] t = new float[TPR]; // compentation coefficeints
     public final float[] ea = {0,23.5f,47.0f,70.5f,94.0f,117.5f,141.0f,164.5f,188.0f,211.5f,235.0f,258.5f,282.0f,305.5f,332.75f}; // encoder angles
-    int wdCount = 16;
+    final static int wdCount = 16;
     float[] wd = new float[wdCount];
     public float[][] comp = new float[wdCount][TPR];
 
@@ -155,7 +155,19 @@ public class RotationProcessor implements RotationReceiver {
         }
 
         float getWindDirection() {
-            return wd[findMinIdx(error)];
+
+//            return wd[findMinIdx(error)];
+            int minIndex = findMinIdx(error);
+            double alph = error[(minIndex-1+wd.length)%wd.length];
+            double beta = error[minIndex];
+            double gamma = error[(minIndex+1)%wd.length];
+
+            double p = 0.5d * (alph - gamma) / (alph - 2 * beta + gamma);
+
+            float direction = (float) (((minIndex+p+wd.length)%wd.length)*360/wdCount);
+//            float directionAmplitude = (float) (beta - 1/4 * (alph - gamma) * p);
+            Log.d("RotationProcessor", String.format("minIndex: %d, p: %f, direction: %f", minIndex, p, direction));
+            return direction;
         }
         int getWindDirectionIdx() {
             return findMinIdx(error);
