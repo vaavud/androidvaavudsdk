@@ -119,7 +119,7 @@ public class RotationProcessor implements RotationReceiver {
     }
 
     private boolean steady(Rotation rotation) {
-        return Math.abs(rotation.relRotationTime) < 0.04;
+        return Math.abs(rotation.relRotationTime) < 0.05;
     }
 
     private boolean calibrationSpeed(Rotation rotation) {
