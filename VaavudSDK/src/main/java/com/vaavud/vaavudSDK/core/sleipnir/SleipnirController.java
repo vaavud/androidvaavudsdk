@@ -232,7 +232,7 @@ public class SleipnirController implements AudioListener, TickReceiver, Rotation
 
     @Override
     public void newHeading(float heading) {
-        tickProcessor.setHeading(heading);
+        if (tickProcessor != null) tickProcessor.setHeading(heading);
     }
 
     public void setSpeedListener(SpeedListener speedListener) {

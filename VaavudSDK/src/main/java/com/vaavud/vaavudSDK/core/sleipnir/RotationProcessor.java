@@ -35,6 +35,7 @@ public class RotationProcessor implements RotationReceiver {
 
     final static int rgTimeMax = 30000;
     final static int rgCalibrationTimeMax = 50000;
+    final static float offset = 10.0f;
 
     float[] fitcurvePercent = {1.93055056304272F, 1.92754159835895F, 1.92282438491601F, 1.91642240663535F, 1.90836180821769F, 1.89867136590046F, 1.88738243346175F, 1.87452883370120F, 1.86014676759279F, 1.84427478518094F, 1.82695377850290F, 1.80822697586826F,
             1.78813992874676F, 1.76674047747091F, 1.74407866757061F, 1.72020656030400F, 1.69517800715690F, 1.66904843699963F, 1.64187464950645F, 1.61371462647876F, 1.58462740924956F, 1.55467305246007F, 1.52391260026944F, 1.49240801962532F, 1.46022202221808F,
@@ -164,7 +165,7 @@ public class RotationProcessor implements RotationReceiver {
 
             double p = 0.5d * (alph - gamma) / (alph - 2 * beta + gamma);
 
-            float direction = (float) (((minIndex+p+wd.length)%wd.length)*360/wdCount);
+            float direction = (float) ((minIndex+p) * 360/(float)wdCount + offset + 360) % 360;
 //            float directionAmplitude = (float) (beta - 1/4 * (alph - gamma) * p);
             Log.d("RotationProcessor", String.format("minIndex: %d, p: %f, direction: %f", minIndex, p, direction));
             return direction;
@@ -209,9 +210,7 @@ public class RotationProcessor implements RotationReceiver {
                 angle = angle%360;
 
                 float f = fitcurve[(int) angle];
-
                 float diff =  rotation.relVelocities[j] - t[j] - f;
-
                 errorRMS[i] += diff*diff;
             }
         }
@@ -236,6 +235,8 @@ public class RotationProcessor implements RotationReceiver {
             }
             dataCount++;
         }
+
+        if (dataCount == 0) return d; // Avoid NaN
         return divide(sub(d,f), (float) dataCount);
     }
 
