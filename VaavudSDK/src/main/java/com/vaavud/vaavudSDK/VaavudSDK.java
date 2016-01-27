@@ -2,13 +2,11 @@ package com.vaavud.vaavudSDK;
 
 
 import android.content.Context;
-import android.os.Handler;
 import android.util.Log;
 
 import com.vaavud.vaavudSDK.core.VaavudCoreSDK;
 import com.vaavud.vaavudSDK.core.VaavudError;
 import com.vaavud.vaavudSDK.core.listener.DirectionListener;
-import com.vaavud.vaavudSDK.core.listener.HeadingListener;
 import com.vaavud.vaavudSDK.core.listener.LocationEventListener;
 import com.vaavud.vaavudSDK.core.listener.OrientationListener;
 import com.vaavud.vaavudSDK.core.listener.SpeedListener;
@@ -19,7 +17,6 @@ import com.vaavud.vaavudSDK.core.model.event.DirectionEvent;
 import com.vaavud.vaavudSDK.core.model.event.LocationEvent;
 import com.vaavud.vaavudSDK.core.model.event.SpeedEvent;
 import com.vaavud.vaavudSDK.core.model.event.VelocityEvent;
-import com.vaavud.vaavudSDK.core.sleipnir.listener.AnalysisListener;
 import com.vaavud.vaavudSDK.model.MeasurementSession;
 import com.vaavud.vaavudSDK.model.WindMeter;
 
@@ -40,47 +37,26 @@ public class VaavudSDK implements SpeedListener, DirectionListener, LocationEven
     private Config config;
     private LocationService _location;
 
-//    private SpeedListener vaavudSpeed;
-//    private DirectionListener vaavudDirection;
-//    private LocationEventListener vaavudLocation;
-//    private OrientationListener vaavudOrientation;
+    private SpeedListener vaavudSpeed;
+    private DirectionListener vaavudDirection;
+    private LocationEventListener vaavudLocation;
+    private OrientationListener vaavudOrientation;
 
 
-    private Float windSpeedAvg;
-    private Float windSpeedMax;
+    private Float windSpeed;
     private Float windDirection;
-
-
-
-    private final Handler handler;
-
-    private Runnable sendData = new Runnable() {
-        @Override
-        public void run(){
-            Log.d(TAG, String.valueOf(session.getLastSpeedEvent().getTime()));
-//            if (vaavudSpeed!=null) vaavudSpeed.speedChanged(session.getLastSpeedEvent());
-
-//            if (vaavudDirection!=null) vaavudDirection.newDirectionEvent(session.getLastDirectionEvent());
-//            if (vaavudLocation!=null) vaavudLocation.newLocation(session.getLastLocationEvent());
-            handler.postDelayed(this,config.getUpdateFrequency());
-        }
-    };
-
 
     public VaavudSDK(Context _context, Map<String, Object> configuration) {
         context = _context;
         if (sdk == null) {
             sdk = new VaavudCoreSDK(context);
-            sdk.setSpeedListener(this);
         }
         config = new Config(configuration);
-        handler = new Handler();
-
     }
 
     public void startSession() throws VaavudError {
-        windSpeedAvg = 0.0f;
-        windSpeedMax = 0.0f;
+
+        windSpeed = 0.0f;
 
         session = new MeasurementSession();
         session.startSession();
@@ -90,15 +66,10 @@ public class VaavudSDK implements SpeedListener, DirectionListener, LocationEven
         if (config.getWindMeter().equals(WindMeter.SLEIPNIR)) sdk.startSleipnir();
         else sdk.startMjolnir();
 
-        handler.postDelayed(sendData,config.getUpdateFrequency());
-
     }
 
     public void stopSession() throws VaavudError {
 
-        Log.d(TAG,"SpeedAverage: "+windSpeedAvg);
-        Log.d(TAG,"SpeedMax: "+windSpeedMax);
-        handler.removeCallbacks(sendData);
         session.stopSession();
         location().stop();
         if (config.getWindMeter().equals(WindMeter.SLEIPNIR)) sdk.stopSleipnir();
@@ -117,18 +88,18 @@ public class VaavudSDK implements SpeedListener, DirectionListener, LocationEven
         return sdk.isSleipnirActive();
     }
 
-    
+
     // // FIXME: 21/01/16 concider removing and ask users to access to the SDKCore directly
 //
-//    public void setSpeedListener(SpeedListener speedListener) {
-//        sdk.setSpeedListener(this);
-//        vaavudSpeed = speedListener;
-//    }
-//
-//    public void setDirectionListener(DirectionListener directionListener) {
-//        sdk.setDirectionListener(this);
-//        vaavudDirection = directionListener;
-//    }
+    public void setSpeedListener(SpeedListener speedListener) {
+        sdk.setSpeedListener(this);
+        vaavudSpeed = speedListener;
+    }
+
+    public void setDirectionListener(DirectionListener directionListener) {
+        sdk.setDirectionListener(this);
+        vaavudDirection = directionListener;
+    }
 //
 //
 //    public void setOrientationListener(OrientationListener orientationListener) {
@@ -155,15 +126,15 @@ public class VaavudSDK implements SpeedListener, DirectionListener, LocationEven
 
     @Override
     public void speedChanged(SpeedEvent event) {
-        if (event.getSpeed() > windSpeedMax) windSpeedMax = event.getSpeed();
-        windSpeedAvg = (event.getSpeed() + session.getNumSpeedEvents() * windSpeedAvg) / (session.getNumSpeedEvents() + 1);
+        windSpeed = 0.8f * windSpeed + 0.2f*event.getSpeed();
         session.addSpeedEvent(event);
-//        vaavudSpeed.speedChanged(event);
+        vaavudSpeed.speedChanged(new SpeedEvent(event.getTime(),windSpeed));
     }
 
     @Override
     public void newDirectionEvent(DirectionEvent event) {
         session.addDirectionEvent(event);
+        vaavudDirection.newDirectionEvent(event);
     }
 
     @Override
