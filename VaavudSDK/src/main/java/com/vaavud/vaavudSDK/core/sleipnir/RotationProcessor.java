@@ -86,7 +86,7 @@ public class RotationProcessor implements RotationReceiver {
         }
 
         this.comp = loadCoef(sharedPreferences);
-        t = estimateT(comp);
+        if (readyForCalibration()) t = estimateT(comp);
     }
 
 
@@ -111,7 +111,7 @@ public class RotationProcessor implements RotationReceiver {
             rgCalibration.addRotation(rotation);
             if (rgCalibration.isFull()) {
                 insertIntoComp(rgCalibration.getWindDirectionIdx(), rgCalibration.getRelVelAvg());
-                t = estimateT(comp);
+                if (readyForCalibration()) t = estimateT(comp);
                 rgCalibration = new RotationGroup(wd, rgCalibrationTimeMax);
             }
         }
@@ -124,7 +124,7 @@ public class RotationProcessor implements RotationReceiver {
     }
 
     private boolean calibrationSpeed(Rotation rotation) {
-        return rotation.timeOneRotation > 700 && rotation.timeOneRotation < 5000; // increase slightly compared to android for better testing.
+        return rotation.timeOneRotation > 700 && rotation.timeOneRotation < 10000; // increase slightly compared to android for better testing.
     }
 
     class RotationGroup {
@@ -157,7 +157,6 @@ public class RotationProcessor implements RotationReceiver {
 
         float getWindDirection() {
 
-//            return wd[findMinIdx(error)];
             int minIndex = findMinIdx(error);
             double alph = error[(minIndex-1+wd.length)%wd.length];
             double beta = error[minIndex];
@@ -297,6 +296,17 @@ public class RotationProcessor implements RotationReceiver {
         }
 
         return coef;
+    }
+
+    boolean readyForCalibration() {
+        if (t[0] != 0) return true;
+
+        int dataCount = 0;
+        for (int i = 0; i < wd.length; i++) {
+            if (comp[i][0] == 0) continue; // for unfilled angles
+            dataCount++;
+        }
+        return dataCount >= 3;
     }
 
     private void saveCoef(SharedPreferences pref, float[][] coef) {
