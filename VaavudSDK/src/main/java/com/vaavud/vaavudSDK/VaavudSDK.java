@@ -9,6 +9,7 @@ import com.vaavud.vaavudSDK.core.VaavudError;
 import com.vaavud.vaavudSDK.core.listener.DirectionListener;
 import com.vaavud.vaavudSDK.core.listener.LocationEventListener;
 import com.vaavud.vaavudSDK.core.listener.OrientationListener;
+import com.vaavud.vaavudSDK.core.listener.PlugListener;
 import com.vaavud.vaavudSDK.core.listener.SpeedListener;
 import com.vaavud.vaavudSDK.core.listener.StatusListener;
 import com.vaavud.vaavudSDK.core.location.LocationService;
@@ -16,11 +17,14 @@ import com.vaavud.vaavudSDK.core.model.MeasureStatus;
 import com.vaavud.vaavudSDK.core.model.event.DirectionEvent;
 import com.vaavud.vaavudSDK.core.model.event.LocationEvent;
 import com.vaavud.vaavudSDK.core.model.event.SpeedEvent;
-import com.vaavud.vaavudSDK.core.model.event.VelocityEvent;
+import com.vaavud.vaavudSDK.model.event.BearingEvent;
+import com.vaavud.vaavudSDK.model.event.VelocityEvent;
 import com.vaavud.vaavudSDK.model.MeasurementSession;
 import com.vaavud.vaavudSDK.model.WindMeter;
+import com.vaavud.vaavudSDK.model.event.TrueDirectionEvent;
+import com.vaavud.vaavudSDK.model.event.TrueSpeedEvent;
 
-import java.util.Iterator;
+import java.util.Date;
 import java.util.Map;
 
 
@@ -28,7 +32,7 @@ import java.util.Map;
 /**
  * Created by juan on 18/01/16.
  */
-public class VaavudSDK implements SpeedListener, DirectionListener, LocationEventListener, OrientationListener, StatusListener {
+public class VaavudSDK implements SpeedListener, DirectionListener, LocationEventListener, OrientationListener, StatusListener, PlugListener {
 
     private static final String TAG = "VaavudSDK";
     private Context context;
@@ -42,7 +46,7 @@ public class VaavudSDK implements SpeedListener, DirectionListener, LocationEven
     private LocationEventListener vaavudLocation;
     private OrientationListener vaavudOrientation;
 
-
+    private boolean sleipnirAvailable = false;
     private Float windSpeed;
     private Float windDirection;
 
@@ -54,7 +58,11 @@ public class VaavudSDK implements SpeedListener, DirectionListener, LocationEven
         config = new Config(configuration);
     }
 
-    public void startSession() throws VaavudError {
+    public boolean isSleipnirAvailable(){
+        return sleipnirAvailable;
+    }
+
+    public int startSession() throws VaavudError {
 
         windSpeed = 0.0f;
 
@@ -62,9 +70,10 @@ public class VaavudSDK implements SpeedListener, DirectionListener, LocationEven
         session.startSession();
         location().setEventListener(this);
         location().start();
+        if (config.getWindMeter().equals(WindMeter.MJOLNIR)) sdk.startMjolnir();
+        if (config.getWindMeter().equals(WindMeter.SLEIPNIR) & sleipnirAvailable ) sdk.startSleipnir();
 
-        if (config.getWindMeter().equals(WindMeter.SLEIPNIR)) sdk.startSleipnir();
-        else sdk.startMjolnir();
+        return 0;
 
     }
 
@@ -152,6 +161,34 @@ public class VaavudSDK implements SpeedListener, DirectionListener, LocationEven
     public void newVelocity(VelocityEvent event) {
         Log.d(TAG, "New Velocity: " + event.getVelocity());
         session.addVelocityEvent(event);
+        estimateTrueWind(event);
+    }
+
+    @Override
+    public void newBearing(BearingEvent event) {
+        session.addBearingEvent(event);
+    }
+
+    private void estimateTrueWind(VelocityEvent velocity) {
+        DirectionEvent direction = session.getLastDirectionEvent();
+        SpeedEvent speed = session.getLastSpeedEvent();
+
+        float rad = (float) ((Math.PI * direction.getDirection())/180);
+        float trueSpeed = (float)Math.sqrt(Math.pow(speed.getSpeed(),2.0) + Math.pow(velocity.getVelocity(),2) - 2*speed.getSpeed()*velocity.getVelocity()*Math.cos(rad));
+        session.addTrueSpeedEvent(new TrueSpeedEvent(new Date().getTime(),trueSpeed));
+
+        float trueDirection = 0;
+        if (0 < rad && Math.PI > rad) {
+            trueDirection = (float) Math.acos((speed.getSpeed() * Math.cos(rad) - velocity.getVelocity()) / trueSpeed);
+            session.addTrueDirectionEvent(new TrueDirectionEvent(new Date().getTime(), trueDirection));
+        }
+        else{
+            trueDirection = (-1)*(float)Math.acos((speed.getSpeed()*Math.cos(rad) - velocity.getVelocity())/trueSpeed);
+            session.addTrueDirectionEvent(new TrueDirectionEvent(new Date().getTime(),trueDirection));
+        }
+
+//        Log.d(TAG,"True Speed: " + trueSpeed + "True Direction: " + trueDirection);
+
     }
 
     @Override
@@ -164,66 +201,9 @@ public class VaavudSDK implements SpeedListener, DirectionListener, LocationEven
 
     }
 
-
-    class Config {
-        private WindMeter windMeter;
-        private int updateFrequency;
-        private long locationFrequency;
-
-        public Config(Map<String, Object> configuration) {
-            if (configuration != null) {
-                configure(configuration);
-            } else {
-                windMeter = WindMeter.SLEIPNIR;
-                updateFrequency = 200;
-                locationFrequency = 1000;
-            }
-
-        }
-
-        public WindMeter getWindMeter() {
-            return windMeter;
-        }
-
-        public void setWindMeter(WindMeter _windMeter) {
-            windMeter = _windMeter;
-        }
-
-        public int getUpdateFrequency() {
-            return updateFrequency;
-        }
-
-        public void setUpdateFrequency(int _updateFrequency) {
-            updateFrequency = _updateFrequency;
-        }
-
-        public long getLocationFrequency() {
-            return locationFrequency;
-        }
-
-        public void setLocationFrequency(int _locationFrequency) {
-            locationFrequency = _locationFrequency;
-        }
-
-        private void configure(Map<String, Object> configuration) {
-            Iterator<Map.Entry<String, Object>> it = configuration.entrySet().iterator();
-            while (it.hasNext()) {
-                Map.Entry<String, Object> entry = it.next();
-                switch (entry.getKey()) {
-                    case "windMeter":
-                        config.setWindMeter((WindMeter) entry.getValue());
-                        break;
-                    case "updateFrequency":
-                        config.setUpdateFrequency((int) entry.getValue());
-                        break;
-                    case "locationFrequency":
-                        config.setUpdateFrequency((int) entry.getValue());
-                        break;
-                    default:
-                        break;
-                }
-
-            }
-        }
+    @Override
+    public void onHeadsetStatusChanged(boolean plugged) {
+        sleipnirAvailable = plugged;
     }
+
 }

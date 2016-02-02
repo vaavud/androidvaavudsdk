@@ -4,12 +4,17 @@ package com.vaavud.vaavudSDK.model;
  * Created by juan on 18/01/16.
  */
 
-import android.util.Log;
-
 import com.vaavud.vaavudSDK.core.model.event.DirectionEvent;
+import com.vaavud.vaavudSDK.core.model.event.HeadingEvent;
 import com.vaavud.vaavudSDK.core.model.event.LocationEvent;
 import com.vaavud.vaavudSDK.core.model.event.SpeedEvent;
-import com.vaavud.vaavudSDK.core.model.event.VelocityEvent;
+import com.vaavud.vaavudSDK.model.event.BearingEvent;
+import com.vaavud.vaavudSDK.model.event.VelocityEvent;
+import com.vaavud.vaavudSDK.model.event.AltitudeEvent;
+import com.vaavud.vaavudSDK.model.event.PressureEvent;
+import com.vaavud.vaavudSDK.model.event.TemperatureEvent;
+import com.vaavud.vaavudSDK.model.event.TrueDirectionEvent;
+import com.vaavud.vaavudSDK.model.event.TrueSpeedEvent;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -20,23 +25,30 @@ public class MeasurementSession implements Serializable {
 
     private static final String TAG = "MeaSession";
     private String geoLocationNameLocalized;
-    private Date startTime;
-    private Date endTime;
+    private long startTime;
+    private long endTime;
     private List<LocationEvent> location;
     private List<SpeedEvent> speed;
     private List<DirectionEvent> direction;
     private List<VelocityEvent> velocity;
+    private List<HeadingEvent> heading;
+    private List<BearingEvent> bearing;
+    private List<TrueSpeedEvent> trueSpeed;
+    private List<TrueDirectionEvent> trueDirection;
+    private List<TemperatureEvent> temperature;
+    private List<PressureEvent> pressure;
+    private List<AltitudeEvent> altitude;
 
     private int lastSpeedDispached = 0;
+    private int lastTrueSpeedDispached = 0;
+    private int lastTrueDirectionDispached =0;
+
 
     private WindMeter windMeter = WindMeter.MJOLNIR;
 
-    private Float altitude;
-
-    private Float temperature;
-    private Integer pressure;
     private Float windChill;
     private Float gustiness;
+
 
 
     public MeasurementSession() {
@@ -45,34 +57,62 @@ public class MeasurementSession implements Serializable {
         location = new ArrayList<>();
         direction = new ArrayList<>();
         velocity = new ArrayList<>();
+        bearing = new ArrayList<>();
+        trueSpeed = new ArrayList<>();
+        trueDirection = new ArrayList<>();
+        temperature = new ArrayList<>();
+        pressure = new ArrayList<>();
+        altitude = new ArrayList<>();
+
     }
 
     public void startSession() {
         speed.clear();
         location.clear();
         direction.clear();
-        startTime = new Date();
+        velocity.clear();
+        trueDirection.clear();
+        trueSpeed.clear();
+        temperature.clear();
+        pressure.clear();
+        altitude.clear();
+        startTime = new Date().getTime();
     }
 
     public void addSpeedEvent(SpeedEvent event) {
         speed.add(event);
     }
-
     public void addLocationEvent(LocationEvent event) {
         location.add(event);
     }
-
     public void addDirectionEvent(DirectionEvent event) {
         direction.add(event);
     }
-
     public void addVelocityEvent(VelocityEvent event) {
         velocity.add(event);
+    }
+    public void addTrueSpeedEvent(TrueSpeedEvent event) {
+        trueSpeed.add(event);
+    }
+    public void addTrueDirectionEvent(TrueDirectionEvent event) {
+        trueDirection.add(event);
+    }
+    public void addTemperatureEvent(TemperatureEvent event) {
+        temperature.add(event);
+    }
+    public void addPressureEvent(PressureEvent event) {
+        pressure.add(event);
+    }
+    public void addAltitudeEvent(AltitudeEvent event) {
+        altitude.add(event);
+    }
+    public void addBearingEvent(BearingEvent event) {
+        bearing.add(event);
     }
 
     public SpeedEvent getLastSpeedEvent(){
         int newIndex = speed.size()-1;
-        Log.d(TAG,"last: "+lastSpeedDispached + " new: "+newIndex);
+//        Log.d(TAG,"last: "+lastSpeedDispached + " new: "+newIndex);
 
         if (lastSpeedDispached <= newIndex){
             lastSpeedDispached = newIndex;
@@ -80,6 +120,29 @@ public class MeasurementSession implements Serializable {
         }
         return new SpeedEvent(0,0);
     }
+
+    public TrueSpeedEvent getLastTrueSpeedEvent(){
+        int newIndex = trueSpeed.size()-1;
+//        Log.d(TAG,"last: "+lastSpeedDispached + " new: "+newIndex);
+
+        if (lastTrueSpeedDispached <= newIndex){
+            lastTrueSpeedDispached = newIndex;
+            return trueSpeed.get(lastTrueSpeedDispached);
+        }
+        return new TrueSpeedEvent(0,0);
+    }
+
+    public TrueDirectionEvent getLastTrueDirectionEvent(){
+        int newIndex = trueDirection.size()-1;
+//        Log.d(TAG,"last: "+lastSpeedDispached + " new: "+newIndex);
+
+        if (lastTrueDirectionDispached <= newIndex){
+            lastTrueDirectionDispached = newIndex;
+            return trueDirection.get(lastTrueDirectionDispached);
+        }
+        return new TrueDirectionEvent(0,-1);
+    }
+
     public LocationEvent getLastLocationEvent(){
         return location.get(location.size()-1);
     }
@@ -88,36 +151,12 @@ public class MeasurementSession implements Serializable {
     }
 
     public MeasurementSession stopSession() {
-        endTime = new Date();
+        endTime = new Date().getTime();
         return this;
     }
 
     public int getNumSpeedEvents() {
         return speed.size();
-    }
-
-    public void setAltitude(Float altitude) {
-        this.altitude = altitude;
-    }
-
-    public Float getAltitude() {
-        return altitude;
-    }
-
-    public void setTemperature(Float temperature) {
-        this.temperature = temperature;
-    }
-
-    public Float getTemperature() {
-        return temperature;
-    }
-
-    public void setPressure(Integer pressure) {
-        this.pressure = pressure;
-    }
-
-    public Integer getPressure() {
-        return pressure;
     }
 
     public void setWindChill(Float windChill) {
@@ -144,11 +183,11 @@ public class MeasurementSession implements Serializable {
         this.geoLocationNameLocalized = geoLocationNameLocalized;
     }
 
-    public Date getStartTime() {
+    public long getStartTime() {
         return startTime;
     }
 
-    public Date getEndTime() {
+    public long getEndTime() {
         return endTime;
     }
 
@@ -159,6 +198,7 @@ public class MeasurementSession implements Serializable {
     public void setWindMeter(WindMeter windMeter) {
         this.windMeter = windMeter;
     }
+
 
 
 }

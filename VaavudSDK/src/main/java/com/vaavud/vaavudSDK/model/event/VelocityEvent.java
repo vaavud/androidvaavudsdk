@@ -1,4 +1,4 @@
-package com.vaavud.vaavudSDK.core.model.event;
+package com.vaavud.vaavudSDK.model.event;
 
 /**
  * Created by juan on 19/01/16.

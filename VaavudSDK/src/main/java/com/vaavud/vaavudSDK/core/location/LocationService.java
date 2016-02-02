@@ -6,20 +6,19 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
+import android.util.Log;
 
 import com.vaavud.vaavudSDK.core.VaavudError;
 import com.vaavud.vaavudSDK.core.listener.LocationEventListener;
 import com.vaavud.vaavudSDK.core.model.LatLng;
 import com.vaavud.vaavudSDK.core.model.event.LocationEvent;
-import com.vaavud.vaavudSDK.core.model.event.VelocityEvent;
-
-import static android.location.LocationManager.GPS_PROVIDER;
-import static android.location.LocationManager.NETWORK_PROVIDER;
+import com.vaavud.vaavudSDK.model.event.VelocityEvent;
 
 /**
  * Created by juan on 19/01/16.
  */
 public class LocationService {
+    private static final String TAG = "LocationService";
 
     private static final int LOCATION_REQUEST_PERMISIONS = 500;
     private static final long TWO_MINUTES = 1000L * 60L * 2L;
@@ -43,26 +42,6 @@ public class LocationService {
         locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
         geocoder = new Geocoder(context);
 
-
-        locationListener = new LocationListener() {
-            public void onLocationChanged(Location location) {
-                if (isBetterLocation(location, lastLocation)) {
-                    //Log.i("LocationUpdateManager", "Got better location (" + location.getLatitude() + "," + location.getLongitude() + ", " + location.getAccuracy() + ")");
-                    lastLocation = location;
-                    locationEventListener.newVelocity(new VelocityEvent(lastLocation.getTime(), lastLocation.getSpeed()));
-                }
-                locationEventListener.newLocation(new LocationEvent(lastLocation.getTime(), new LatLng(lastLocation.getLatitude(), lastLocation.getLongitude())));
-            }
-
-            public void onStatusChanged(String provider, int status, Bundle extras) {
-            }
-
-            public void onProviderEnabled(String provider) {
-            }
-
-            public void onProviderDisabled(String provider) {
-            }
-        };
     }
 
     public void setLocationDelay(int _locationDelay) {
@@ -70,18 +49,37 @@ public class LocationService {
     }
 
     public void start() throws VaavudError {
-        if (locationManager.getProvider(GPS_PROVIDER) != null) {
-            locationManager.requestLocationUpdates(GPS_PROVIDER, locationDelay, 0, locationListener);
-            if (lastLocation == null) {
-                lastLocation = locationManager.getLastKnownLocation(GPS_PROVIDER);
-            }
-        }
 
-        if (locationManager.getProvider(NETWORK_PROVIDER) != null) {
-            //Log.i("LocationUpdateManager", "Requesting network location updates");
-            locationManager.requestLocationUpdates(NETWORK_PROVIDER, locationDelay, 0, locationListener);
+        locationListener = new LocationListener() {
+            public void onLocationChanged(Location location) {
+                if (isBetterLocation(location, lastLocation)) {
+                    Log.d(TAG, "Got better location (" + location.getLatitude() + "," + location.getLongitude() + ", " + location.getAccuracy() + ")");
+                    //Log.i("LocationUpdateManager", "Got better location (" + location.getLatitude() + "," + location.getLongitude() + ", " + location.getAccuracy() + ")");
+                    lastLocation = location;
+                    locationEventListener.newVelocity(new VelocityEvent(lastLocation.getTime(), lastLocation.getSpeed()));
+//                    locationEventListener.newBearing(new BearingEvent(lastLocation.getTime(),lastLocation.getBearing()));
+                }
+                locationEventListener.newLocation(new LocationEvent(lastLocation.getTime(), new LatLng(lastLocation.getLatitude(), lastLocation.getLongitude())));
+            }
+
+            public void onStatusChanged(String provider, int status, Bundle extras) {
+                Log.d(TAG, "Status Changed: " + provider + " " + status + " " + extras);
+            }
+
+            public void onProviderEnabled(String provider) {
+                Log.d(TAG, "Provider Enabled " + provider);
+            }
+
+            public void onProviderDisabled(String provider) {
+                Log.d(TAG, "Provider Disabled " + provider);
+            }
+        };
+
+        for (String provider : locationManager.getAllProviders()) {
+            locationManager.requestLocationUpdates(provider, locationDelay, 0, locationListener);
             if (lastLocation == null) {
-                lastLocation = locationManager.getLastKnownLocation(NETWORK_PROVIDER);
+                lastLocation = locationManager.getLastKnownLocation(provider);
+
             }
         }
     }

@@ -14,7 +14,6 @@ import com.vaavud.vaavudSDK.core.orientation.OrientationController;
 import com.vaavud.vaavudSDK.core.orientation.SensorFusion;
 import com.vaavud.vaavudSDK.core.sleipnir.SleipnirController;
 import com.vaavud.vaavudSDK.core.sleipnir.listener.AnalysisListener;
-import com.vaavud.vaavudSDK.core.sleipnir.model.Direction;
 
 /**
  * Created by aokholm on 15/01/16.
@@ -38,10 +37,11 @@ public class VaavudCoreSDK implements SpeedListener, DirectionListener, HeadingL
         this.context = context;
     }
 
-    public void startMjolnir() throws VaavudError {
+    public int startMjolnir() throws VaavudError {
         orientation().start();
         mjolnir().setSpeedListener(this);
         mjolnir().start();
+        return 0;
     }
 
     public void stopMjolnir() {
