@@ -14,6 +14,8 @@ import com.vaavud.vaavudSDK.core.orientation.OrientationController;
 import com.vaavud.vaavudSDK.core.orientation.SensorFusion;
 import com.vaavud.vaavudSDK.core.sleipnir.SleipnirController;
 import com.vaavud.vaavudSDK.core.sleipnir.listener.AnalysisListener;
+import com.vaavud.vaavudSDK.model.event.TrueDirectionEvent;
+import com.vaavud.vaavudSDK.model.event.TrueSpeedEvent;
 
 /**
  * Created by aokholm on 15/01/16.
@@ -122,10 +124,20 @@ public class VaavudCoreSDK implements SpeedListener, DirectionListener, HeadingL
     }
 
     @Override
+    public void trueSpeedChanged(TrueSpeedEvent event) {
+
+    }
+
+    @Override
     public void newDirectionEvent(DirectionEvent event) {
         if (directionListener != null) {
             this.directionListener.newDirectionEvent(event);
         }
+    }
+
+    @Override
+    public void trueDirectionEvent(TrueDirectionEvent event) {
+
     }
 
     @Override

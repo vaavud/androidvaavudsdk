@@ -144,10 +144,19 @@ public class MeasurementSession implements Serializable {
     }
 
     public LocationEvent getLastLocationEvent(){
-        return location.get(location.size()-1);
+
+        if (location.size()>0) {
+            return location.get(location.size() - 1);
+        }else{
+            return null;
+        }
     }
     public DirectionEvent getLastDirectionEvent(){
-        return direction.get(direction.size()-1);
+        if (direction.size()>0) {
+            return direction.get(direction.size() - 1);
+        }else{
+            return null;
+        }
     }
 
     public MeasurementSession stopSession() {

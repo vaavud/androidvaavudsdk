@@ -12,6 +12,7 @@ import com.vaavud.vaavudSDK.core.VaavudError;
 import com.vaavud.vaavudSDK.core.listener.LocationEventListener;
 import com.vaavud.vaavudSDK.core.model.LatLng;
 import com.vaavud.vaavudSDK.core.model.event.LocationEvent;
+import com.vaavud.vaavudSDK.model.event.BearingEvent;
 import com.vaavud.vaavudSDK.model.event.VelocityEvent;
 
 /**
@@ -57,7 +58,7 @@ public class LocationService {
                     //Log.i("LocationUpdateManager", "Got better location (" + location.getLatitude() + "," + location.getLongitude() + ", " + location.getAccuracy() + ")");
                     lastLocation = location;
                     locationEventListener.newVelocity(new VelocityEvent(lastLocation.getTime(), lastLocation.getSpeed()));
-//                    locationEventListener.newBearing(new BearingEvent(lastLocation.getTime(),lastLocation.getBearing()));
+                    locationEventListener.newBearing(new BearingEvent(lastLocation.getTime(),lastLocation.getBearing()));
                 }
                 locationEventListener.newLocation(new LocationEvent(lastLocation.getTime(), new LatLng(lastLocation.getLatitude(), lastLocation.getLongitude())));
             }
