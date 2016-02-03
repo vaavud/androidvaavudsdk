@@ -7,6 +7,7 @@ import android.util.Log;
 import com.vaavud.vaavudSDK.core.VaavudCoreSDK;
 import com.vaavud.vaavudSDK.core.VaavudError;
 import com.vaavud.vaavudSDK.core.listener.DirectionListener;
+import com.vaavud.vaavudSDK.core.listener.HeadingListener;
 import com.vaavud.vaavudSDK.core.listener.LocationEventListener;
 import com.vaavud.vaavudSDK.core.listener.OrientationListener;
 import com.vaavud.vaavudSDK.core.listener.PlugListener;
@@ -17,16 +18,16 @@ import com.vaavud.vaavudSDK.core.model.MeasureStatus;
 import com.vaavud.vaavudSDK.core.model.event.DirectionEvent;
 import com.vaavud.vaavudSDK.core.model.event.LocationEvent;
 import com.vaavud.vaavudSDK.core.model.event.SpeedEvent;
-import com.vaavud.vaavudSDK.model.event.BearingEvent;
-import com.vaavud.vaavudSDK.model.event.VelocityEvent;
+import com.vaavud.vaavudSDK.core.sleipnir.listener.AnalysisListener;
 import com.vaavud.vaavudSDK.model.MeasurementSession;
 import com.vaavud.vaavudSDK.model.WindMeter;
+import com.vaavud.vaavudSDK.model.event.BearingEvent;
 import com.vaavud.vaavudSDK.model.event.TrueDirectionEvent;
 import com.vaavud.vaavudSDK.model.event.TrueSpeedEvent;
+import com.vaavud.vaavudSDK.model.event.VelocityEvent;
 
 import java.util.Date;
 import java.util.Map;
-
 
 
 /**
@@ -35,6 +36,7 @@ import java.util.Map;
 public class VaavudSDK implements SpeedListener, DirectionListener, LocationEventListener, OrientationListener, StatusListener, PlugListener {
 
     private static final String TAG = "VaavudSDK";
+//    private final HeadsetIntentReceiver receiver;
     private Context context;
     private VaavudCoreSDK sdk;
     private MeasurementSession session;
@@ -46,7 +48,8 @@ public class VaavudSDK implements SpeedListener, DirectionListener, LocationEven
     private LocationEventListener vaavudLocation;
     private OrientationListener vaavudOrientation;
 
-    private boolean sleipnirAvailable = false;
+
+    private boolean sleipnirAvailable = true;
     private Float windSpeed;
     private Float windDirection;
 
@@ -55,10 +58,13 @@ public class VaavudSDK implements SpeedListener, DirectionListener, LocationEven
         if (sdk == null) {
             sdk = new VaavudCoreSDK(context);
         }
+//        IntentFilter receiverFilter = new IntentFilter(Intent.ACTION_HEADSET_PLUG);
+//        receiver = new HeadsetIntentReceiver(this);
+//        context.registerReceiver(receiver, receiverFilter);
         config = new Config(configuration);
     }
 
-    public boolean isSleipnirAvailable(){
+    public boolean isSleipnirAvailable() {
         return sleipnirAvailable;
     }
 
@@ -71,7 +77,8 @@ public class VaavudSDK implements SpeedListener, DirectionListener, LocationEven
         location().setEventListener(this);
         location().start();
         if (config.getWindMeter().equals(WindMeter.MJOLNIR)) sdk.startMjolnir();
-        if (config.getWindMeter().equals(WindMeter.SLEIPNIR) & sleipnirAvailable ) sdk.startSleipnir();
+        if (config.getWindMeter().equals(WindMeter.SLEIPNIR) & sleipnirAvailable)
+            sdk.startSleipnir();
 
         return 0;
 
@@ -109,23 +116,24 @@ public class VaavudSDK implements SpeedListener, DirectionListener, LocationEven
         sdk.setDirectionListener(this);
         vaavudDirection = directionListener;
     }
+
+    public void setLocationListener(LocationEventListener locationListener) {
+        vaavudLocation = locationListener;
+//        location().setEventListener(vaavudLocation);
+    }
 //
 //
-//    public void setOrientationListener(OrientationListener orientationListener) {
-//        sdk.setOrientationListener(this);
-//        vaavudOrientation = orientationListener;
-//    }
-//    public void setHeadingListener(HeadingListener headingListener) {
-//        sdk.setHeadingListener(headingListener);
-//    }
-//
-//    public void setDirectionListener(DirectionListener directionListener){
-//        sdk.setDirectionListener(directionListener);
-//    }
-//
-//    public void setAnalysisListener(AnalysisListener analysisListener){
-//        sdk.setAnalysisListener(analysisListener);
-//    }
+    public void setOrientationListener(OrientationListener orientationListener) {
+        sdk.setOrientationListener(this);
+        vaavudOrientation = orientationListener;
+    }
+    public void setHeadingListener(HeadingListener headingListener) {
+        sdk.setHeadingListener(headingListener);
+    }
+
+    public void setAnalysisListener(AnalysisListener analysisListener){
+        sdk.setAnalysisListener(analysisListener);
+    }
     // FIXME: 21/01/16 END fix
 
 
@@ -135,15 +143,25 @@ public class VaavudSDK implements SpeedListener, DirectionListener, LocationEven
 
     @Override
     public void speedChanged(SpeedEvent event) {
-        windSpeed = 0.8f * windSpeed + 0.2f*event.getSpeed();
+        windSpeed = 0.8f * windSpeed + 0.2f * event.getSpeed();
         session.addSpeedEvent(event);
-        vaavudSpeed.speedChanged(new SpeedEvent(event.getTime(),windSpeed));
+        vaavudSpeed.speedChanged(new SpeedEvent(event.getTime(), windSpeed));
+    }
+
+    @Override
+    public void trueSpeedChanged(TrueSpeedEvent event) {
+
     }
 
     @Override
     public void newDirectionEvent(DirectionEvent event) {
         session.addDirectionEvent(event);
         vaavudDirection.newDirectionEvent(event);
+    }
+
+    @Override
+    public void trueDirectionEvent(TrueDirectionEvent event) {
+
     }
 
     @Override
@@ -155,39 +173,58 @@ public class VaavudSDK implements SpeedListener, DirectionListener, LocationEven
     public void newLocation(LocationEvent event) {
         Log.d(TAG, "New Location: " + event.getLocation());
         session.addLocationEvent(event);
+        if (vaavudLocation!=null)
+            vaavudLocation.newLocation(event);
     }
 
     @Override
     public void newVelocity(VelocityEvent event) {
         Log.d(TAG, "New Velocity: " + event.getVelocity());
+
         session.addVelocityEvent(event);
         estimateTrueWind(event);
+        if (vaavudLocation!=null)
+            vaavudLocation.newVelocity(event);
     }
 
     @Override
     public void newBearing(BearingEvent event) {
-        session.addBearingEvent(event);
+        if (event.getBearing() != 0.0f) {
+            session.addBearingEvent(event);
+            if (vaavudLocation!=null)
+                vaavudLocation.newBearing(event);
+        }
     }
 
     private void estimateTrueWind(VelocityEvent velocity) {
         DirectionEvent direction = session.getLastDirectionEvent();
         SpeedEvent speed = session.getLastSpeedEvent();
 
-        float rad = (float) ((Math.PI * direction.getDirection())/180);
-        float trueSpeed = (float)Math.sqrt(Math.pow(speed.getSpeed(),2.0) + Math.pow(velocity.getVelocity(),2) - 2*speed.getSpeed()*velocity.getVelocity()*Math.cos(rad));
-        session.addTrueSpeedEvent(new TrueSpeedEvent(new Date().getTime(),trueSpeed));
+        if (direction != null && speed != null) {
 
-        float trueDirection = 0;
-        if (0 < rad && Math.PI > rad) {
-            trueDirection = (float) Math.acos((speed.getSpeed() * Math.cos(rad) - velocity.getVelocity()) / trueSpeed);
-            session.addTrueDirectionEvent(new TrueDirectionEvent(new Date().getTime(), trueDirection));
-        }
-        else{
-            trueDirection = (-1)*(float)Math.acos((speed.getSpeed()*Math.cos(rad) - velocity.getVelocity())/trueSpeed);
-            session.addTrueDirectionEvent(new TrueDirectionEvent(new Date().getTime(),trueDirection));
-        }
+            float rad = (float) ((Math.PI * direction.getDirection()) / 180);
+            float trueSpeed = (float) Math.sqrt(Math.pow(speed.getSpeed(), 2.0) + Math.pow(velocity.getVelocity(), 2) - 2 * speed.getSpeed() * velocity.getVelocity() * Math.cos(rad));
+            if (trueSpeed >= 0) {
+                TrueSpeedEvent speedEvent = new TrueSpeedEvent(new Date().getTime(), trueSpeed);
+                session.addTrueSpeedEvent(speedEvent);
+                vaavudSpeed.trueSpeedChanged(speedEvent);
+            }
 
-//        Log.d(TAG,"True Speed: " + trueSpeed + "True Direction: " + trueDirection);
+            float trueDirection = -1;
+            TrueDirectionEvent directionEvent = null;
+            if (0 < rad && Math.PI > rad) {
+                trueDirection = (float) Math.acos((speed.getSpeed() * Math.cos(rad) - velocity.getVelocity()) / trueSpeed);
+            } else {
+                trueDirection = (-1) * (float) Math.acos((speed.getSpeed() * Math.cos(rad) - velocity.getVelocity()) / trueSpeed);
+            }
+            if (trueDirection != -1) {
+                directionEvent = new TrueDirectionEvent(new Date().getTime(), trueDirection);
+                session.addTrueDirectionEvent(directionEvent);
+                vaavudDirection.trueDirectionEvent(directionEvent);
+                //        Log.d(TAG,"True Speed: " + trueSpeed + "True Direction: " + trueDirection);
+            }
+
+        }
 
     }
 
