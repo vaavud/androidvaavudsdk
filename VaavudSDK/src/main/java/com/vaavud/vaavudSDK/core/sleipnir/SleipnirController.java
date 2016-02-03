@@ -28,6 +28,8 @@ import com.vaavud.vaavudSDK.core.sleipnir.model.Direction;
 import com.vaavud.vaavudSDK.core.sleipnir.model.Rotation;
 import com.vaavud.vaavudSDK.core.sleipnir.model.Tick;
 
+import java.util.Date;
+
 
 public class SleipnirController implements AudioListener, TickReceiver, RotationReceiver, DirectionReceiver, HeadingListener {
 
@@ -227,7 +229,7 @@ public class SleipnirController implements AudioListener, TickReceiver, Rotation
 
     @Override
     public void newDirection(Direction direction) {
-        directionListener.newDirectionEvent(new DirectionEvent(direction.time, direction.direction));
+        directionListener.newDirectionEvent(new DirectionEvent(new Date().getTime(), direction.direction));
     }
 
     @Override
