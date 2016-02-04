@@ -1,18 +1,18 @@
 package com.vaavud.vaavudSDK.core.sleipnir.audio;
 
-import com.vaavud.vaavudSDK.core.listener.PlugListener;
-
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+
+import com.vaavud.vaavudSDK.core.listener.PlugListener;
 
 public class HeadsetIntentReceiver extends BroadcastReceiver {
 		private String TAG = "HeadSet";
 		private PlugListener listener;
 
-		public HeadsetIntentReceiver(Context context) {
+		public HeadsetIntentReceiver(PlugListener _listener) {
 //		Log.d(TAG, "Created");
-				listener = (PlugListener) context;
+				listener = _listener;
 		}
 
 		@Override
@@ -23,7 +23,6 @@ public class HeadsetIntentReceiver extends BroadcastReceiver {
 
 						int microphoneStatus = intent.getIntExtra("microphone", -1);
 						boolean connectedMicrophone = microphoneStatus == 1;
-//			Log.d(TAG,"Microphone Intent Receiver: "+ connectedMicrophone + " Status: "+ state);
 						listener.onHeadsetStatusChanged(state && connectedMicrophone);
 				}
 		}

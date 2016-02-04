@@ -159,6 +159,14 @@ public class MeasurementSession implements Serializable {
         }
     }
 
+    public BearingEvent getLastBearingEvent(){
+        if (bearing.size()>0) {
+            return bearing.get(bearing.size() - 1);
+        }else{
+            return null;
+        }
+    }
+
     public MeasurementSession stopSession() {
         endTime = new Date().getTime();
         return this;
