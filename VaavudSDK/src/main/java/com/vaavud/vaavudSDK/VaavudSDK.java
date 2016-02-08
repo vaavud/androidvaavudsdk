@@ -6,7 +6,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.util.Log;
 
-
 import com.vaavud.vaavudSDK.core.VaavudCoreSDK;
 import com.vaavud.vaavudSDK.core.VaavudError;
 import com.vaavud.vaavudSDK.core.listener.DirectionListener;
@@ -88,12 +87,13 @@ public class VaavudSDK implements SpeedListener, DirectionListener, LocationEven
 
     }
 
-    public void stopSession() throws VaavudError {
+    public MeasurementSession stopSession() throws VaavudError {
 
         session.stopSession();
         location().stop();
         if (config.getWindMeter().equals(WindMeter.SLEIPNIR)) sdk.stopSleipnir();
         else sdk.stopMjolnir();
+        return session;
 
     }
 
@@ -123,10 +123,9 @@ public class VaavudSDK implements SpeedListener, DirectionListener, LocationEven
 
     public void setLocationListener(LocationEventListener locationListener) {
         vaavudLocation = locationListener;
-//        location().setEventListener(vaavudLocation);
+
     }
-//
-//
+
     public void setOrientationListener(OrientationListener orientationListener) {
         sdk.setOrientationListener(this);
         vaavudOrientation = orientationListener;
@@ -207,7 +206,6 @@ public class VaavudSDK implements SpeedListener, DirectionListener, LocationEven
         BearingEvent bearing = session.getLastBearingEvent();
 
         if (direction != null && speed != null && bearing != null) {
-
             float alpha = direction.getDirection() - bearing.getBearing();
             float rad = (float) ((Math.PI * alpha) / 180);
             float trueSpeed = (float) Math.sqrt(Math.pow(speed.getSpeed(), 2.0) + Math.pow(velocity.getVelocity(), 2) - 2 * speed.getSpeed() * velocity.getVelocity() * Math.cos(rad));

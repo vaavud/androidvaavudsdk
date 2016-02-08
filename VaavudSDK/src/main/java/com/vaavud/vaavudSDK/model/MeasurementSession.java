@@ -27,6 +27,51 @@ public class MeasurementSession implements Serializable {
     private String geoLocationNameLocalized;
     private long startTime;
     private long endTime;
+
+    public List<LocationEvent> getLocation() {
+        return location;
+    }
+
+    public List<SpeedEvent> getSpeed() {
+        return speed;
+    }
+
+    public List<DirectionEvent> getDirection() {
+        return direction;
+    }
+
+    public List<VelocityEvent> getVelocity() {
+        return velocity;
+    }
+
+    public List<HeadingEvent> getHeading() {
+        return heading;
+    }
+
+    public List<BearingEvent> getBearing() {
+        return bearing;
+    }
+
+    public List<TrueSpeedEvent> getTrueSpeed() {
+        return trueSpeed;
+    }
+
+    public List<TrueDirectionEvent> getTrueDirection() {
+        return trueDirection;
+    }
+
+    public List<TemperatureEvent> getTemperature() {
+        return temperature;
+    }
+
+    public List<PressureEvent> getPressure() {
+        return pressure;
+    }
+
+    public List<AltitudeEvent> getAltitude() {
+        return altitude;
+    }
+
     private List<LocationEvent> location;
     private List<SpeedEvent> speed;
     private List<DirectionEvent> direction;
