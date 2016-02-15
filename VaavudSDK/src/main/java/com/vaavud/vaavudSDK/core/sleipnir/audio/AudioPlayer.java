@@ -13,14 +13,14 @@ public class AudioPlayer extends Thread {
     private AudioTrack audioTrack;
     private boolean isPlaying;
 
-    private final int duration = 1; // seconds
+    private final float duration = 0.5f; // seconds
     private final int sampleRate = 44100; //Hz
-    private final int numSamples = duration * sampleRate;
+    private final int numSamples = (int)(duration * sampleRate);
     private short sample[] = new short[numSamples * 2];
     private final double freqOfTone = 14700; // hz
 
     public AudioPlayer() {
-        audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, sampleRate, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT, sampleRate * 2, AudioTrack.MODE_STREAM);
+        audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, sampleRate, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT, sample.length, AudioTrack.MODE_STREAM);
 
         double offset = Math.PI;
 
