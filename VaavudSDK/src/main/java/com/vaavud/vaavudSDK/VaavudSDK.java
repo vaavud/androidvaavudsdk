@@ -214,7 +214,7 @@ public class VaavudSDK implements SpeedListener, DirectionListener, LocationEven
 
         if (direction != null && speed != null && bearing != null) {
             float alpha = direction.getDirection() - bearing.getBearing();
-            float rad = (float) ((Math.PI * alpha) / 180);
+            double rad = Math.toRadians(alpha);
             float trueSpeed = (float) Math.sqrt(Math.pow(speed.getSpeed(), 2.0) + Math.pow(velocity.getVelocity(), 2) - 2 * speed.getSpeed() * velocity.getVelocity() * Math.cos(rad));
             if (trueSpeed >= 0) {
                 TrueSpeedEvent speedEvent = new TrueSpeedEvent(new Date().getTime(), trueSpeed);
@@ -230,7 +230,7 @@ public class VaavudSDK implements SpeedListener, DirectionListener, LocationEven
                 trueDirection = (-1) * (float) Math.acos((speed.getSpeed() * Math.cos(rad) - velocity.getVelocity()) / trueSpeed);
 
             }
-            trueDirection = (float) ((trueDirection * 180) / Math.PI);
+            trueDirection = (float) Math.toDegrees(trueDirection);
             if (trueDirection != -1) {
                 directionEvent = new TrueDirectionEvent(new Date().getTime(), trueDirection);
                 session.addTrueDirectionEvent(directionEvent);
@@ -239,8 +239,8 @@ public class VaavudSDK implements SpeedListener, DirectionListener, LocationEven
             }
 
         } else {
-            vaavudSpeed.trueSpeedChanged(new TrueSpeedEvent(0, 0));
-            vaavudDirection.trueDirectionEvent(new TrueDirectionEvent(0, 0));
+            vaavudSpeed.trueSpeedChanged(new TrueSpeedEvent(new Date().getTime(), 0));
+            vaavudDirection.trueDirectionEvent(new TrueDirectionEvent(new Date().getTime(), 0));
         }
 
     }
