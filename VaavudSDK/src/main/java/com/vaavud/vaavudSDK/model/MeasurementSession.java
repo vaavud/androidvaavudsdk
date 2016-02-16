@@ -198,6 +198,10 @@ public class MeasurementSession implements Serializable {
         return trueWindDirection;
     }
 
+    public float getTrueWindMax() {
+        return trueWindMax;
+    }
+
     public List<LocationEvent> getLocation() {
         return location;
     }
