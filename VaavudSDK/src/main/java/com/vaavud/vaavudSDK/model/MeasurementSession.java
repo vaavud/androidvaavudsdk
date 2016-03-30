@@ -173,6 +173,13 @@ public class MeasurementSession implements Serializable {
         return null;
     }
 
+    public VelocityEvent getLastVelocityEvent() {
+        if (velocity.size() > 0) {
+            return velocity.get(velocity.size() - 1);
+        }
+        return null;
+    }
+
     public MeasurementSession stopSession() {
         endTime = new Date().getTime();
         return this;
