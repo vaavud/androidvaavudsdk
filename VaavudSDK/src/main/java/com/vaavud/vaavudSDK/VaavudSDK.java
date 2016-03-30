@@ -145,11 +145,10 @@ public class VaavudSDK implements SpeedListener, DirectionListener, LocationEven
 
 		@Override
 		public void speedChanged(SpeedEvent event) {
-
 				session.addSpeedEvent(event);
 				float windSpeed = session.getWindMean();
 				vaavudSpeed.speedChanged(new SpeedEvent(event.getTime(), windSpeed));
-				if (session.getLastVelocityEvent() == null || (new Date().getTime() - session.getLastVelocityEvent().getTime()) > TIME_THRESHOLD) {
+				if (!estimateTrueWind()) {
 						TrueSpeedEvent newEvent = new TrueSpeedEvent(event.getTime(), windSpeed);
 						session.addTrueSpeedEvent(newEvent);
 						vaavudSpeed.trueSpeedChanged(newEvent);
@@ -164,7 +163,7 @@ public class VaavudSDK implements SpeedListener, DirectionListener, LocationEven
 		public void newDirectionEvent(DirectionEvent event) {
 				session.addDirectionEvent(event);
 				vaavudDirection.newDirectionEvent(event);
-				if (session.getLastBearingEvent() == null || (new Date().getTime() - session.getLastBearingEvent().getTime()) > TIME_THRESHOLD) {
+				if (!estimateTrueWind()) {
 						TrueDirectionEvent newEvent = new TrueDirectionEvent(event.getTime(), event.getDirection());
 						session.addTrueDirectionEvent(newEvent);
 						vaavudDirection.trueDirectionEvent(newEvent);
@@ -191,8 +190,6 @@ public class VaavudSDK implements SpeedListener, DirectionListener, LocationEven
 		public void newVelocity(VelocityEvent event) {
 //        Log.d(TAG, "New Velocity: " + event.getVelocity());
 				session.addVelocityEvent(event);
-				if (vaavudDirection != null && vaavudSpeed != null)
-						estimateTrueWind(event);
 				if (vaavudLocation != null)
 						vaavudLocation.newVelocity(event);
 		}
@@ -206,42 +203,51 @@ public class VaavudSDK implements SpeedListener, DirectionListener, LocationEven
 				}
 		}
 
-		private void estimateTrueWind(VelocityEvent velocity) {
+		private boolean estimateTrueWind() {
+				VelocityEvent velocity = session.getLastVelocityEvent();
 				DirectionEvent direction = session.getLastDirectionEvent();
 				SpeedEvent speed = session.getLastSpeedEvent();
 				BearingEvent bearing = session.getLastBearingEvent();
 
-				if (direction != null && speed != null && bearing != null) {
-						float alpha = direction.getDirection() - bearing.getBearing();
-						double rad = Math.toRadians(alpha);
-						float trueSpeed = (float) Math.sqrt(Math.pow(speed.getSpeed(), 2.0) + Math.pow(velocity.getVelocity(), 2) - 2 * speed.getSpeed() * velocity.getVelocity() * Math.cos(rad));
-						if (trueSpeed >= 0) {
-								TrueSpeedEvent speedEvent = new TrueSpeedEvent(new Date().getTime(), trueSpeed);
-								session.addTrueSpeedEvent(speedEvent);
-								vaavudSpeed.trueSpeedChanged(speedEvent);
-						}
-
-						float trueDirection = -1;
-						TrueDirectionEvent directionEvent = null;
-						if (0 < rad && Math.PI > rad) {
-								trueDirection = (float) Math.acos((speed.getSpeed() * Math.cos(rad) - velocity.getVelocity()) / trueSpeed);
-						} else {
-								trueDirection = (-1) * (float) Math.acos((speed.getSpeed() * Math.cos(rad) - velocity.getVelocity()) / trueSpeed);
-
-						}
-						trueDirection = (float) Math.toDegrees(trueDirection);
-						if (trueDirection != -1) {
-								directionEvent = new TrueDirectionEvent(new Date().getTime(), trueDirection);
-								session.addTrueDirectionEvent(directionEvent);
-								vaavudDirection.trueDirectionEvent(directionEvent);
-//                Log.d(TAG, "True Speed: " + trueSpeed + "True Direction: " + trueDirection);
-						}
-
-				} else {
-						vaavudSpeed.trueSpeedChanged(new TrueSpeedEvent(new Date().getTime(), 0));
-						vaavudDirection.trueDirectionEvent(new TrueDirectionEvent(new Date().getTime(), 0));
+				if (direction == null || speed == null || bearing == null || velocity == null) {
+						return false;
+				}
+				long time = new Date().getTime();
+				if ((time - direction.getTime()) > TIME_THRESHOLD || (time - speed.getTime()) > TIME_THRESHOLD
+								|| (time - bearing.getTime()) > TIME_THRESHOLD || (time - velocity.getTime()) > TIME_THRESHOLD) {
+						return false;
 				}
 
+				float alpha = direction.getDirection() - bearing.getBearing();
+				double rad = Math.toRadians(alpha);
+				float trueSpeed = (float) Math.sqrt(Math.pow(speed.getSpeed(), 2.0) + Math.pow(velocity.getVelocity(), 2) - 2 * speed.getSpeed() * velocity.getVelocity() * Math.cos(rad));
+
+				TrueSpeedEvent speedEvent = null;
+				if (trueSpeed >= 0) {
+						speedEvent = new TrueSpeedEvent(new Date().getTime(), trueSpeed);
+				}
+
+				float trueDirection = -1;
+				if (0 < rad && Math.PI > rad) {
+						trueDirection = (float) Math.acos((speed.getSpeed() * Math.cos(rad) - velocity.getVelocity()) / trueSpeed);
+				} else {
+						trueDirection = (-1) * (float) Math.acos((speed.getSpeed() * Math.cos(rad) - velocity.getVelocity()) / trueSpeed);
+				}
+				trueDirection = (float) Math.toDegrees(trueDirection);
+
+				TrueDirectionEvent directionEvent = null;
+				if (trueDirection != -1) {
+						directionEvent = new TrueDirectionEvent(new Date().getTime(), trueDirection);
+				}
+
+				if (speedEvent != null && directionEvent != null) {
+						session.addTrueSpeedEvent(speedEvent);
+						session.addTrueDirectionEvent(directionEvent);
+						vaavudSpeed.trueSpeedChanged(speedEvent);
+						vaavudDirection.trueDirectionEvent(directionEvent);
+						return true;
+				}
+				return false;
 		}
 
 		@Override
