@@ -98,7 +98,7 @@ public class SleipnirController implements AudioListener, TickReceiver, Rotation
         rotationProcessor = new RotationProcessor(this, sharedPreferences);
         rotationProcessor.setAnalysisListener(analysisListener);
         tickProcessor = new TickProcessor(this);
-        audioProcessor = new AudioProcessor(this, processBufferSize);
+        audioProcessor = new AudioProcessor(this);
 
         audioPlayer.start();
         audioRecorder.start();
