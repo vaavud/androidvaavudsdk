@@ -166,7 +166,7 @@ public class RotationProcessor implements RotationReceiver {
 
             float direction = (float) ((minIndex+p) * 360/(float)wdCount + offset + 360) % 360;
 //            float directionAmplitude = (float) (beta - 1/4 * (alph - gamma) * p);
-            Log.d("RotationProcessor", String.format("minIndex: %d, p: %f, direction: %f", minIndex, p, direction));
+//            Log.d("RotationProcessor", String.format("minIndex: %d, p: %f, direction: %f", minIndex, p, direction));
             return direction;
         }
         int getWindDirectionIdx() {

@@ -54,8 +54,7 @@ public class VaavudSDK implements SpeedListener, DirectionListener, LocationEven
 
 
 		private boolean sleipnirAvailable = false;
-//    private Float windSpeed;
-//    private Float windDirection;
+
 
 		public VaavudSDK(Context _context, Map<String, Object> configuration) {
 				context = _context;
@@ -257,7 +256,7 @@ public class VaavudSDK implements SpeedListener, DirectionListener, LocationEven
 
 		@Override
 		public void permisionError(String permission) {
-				Log.d(TAG, "Permission Error: " + permission);
+//				Log.d(TAG, "Permission Error: " + permission);
 		}
 
 		@Override
@@ -267,6 +266,11 @@ public class VaavudSDK implements SpeedListener, DirectionListener, LocationEven
 		@Override
 		public void onHeadsetStatusChanged(boolean plugged) {
 				sleipnirAvailable = plugged;
+		}
+
+		@Override
+		public void isSleipnirPlugged(boolean plugged) {
+
 		}
 
 }

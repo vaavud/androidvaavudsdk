@@ -45,7 +45,7 @@ public class AudioPlayer extends Thread {
                 }
             }
         } else {
-            Log.d(TAG, "Player not Initialized " + audioTrack.getState());
+//            Log.d(TAG, "Player not Initialized " + audioTrack.getState());
         }
     }
 
@@ -69,7 +69,7 @@ public class AudioPlayer extends Thread {
         } else {
             audioTrack.setVolume(vol);
         }
-        Log.d(TAG, "volume:" + vol);
+//        Log.d(TAG, "volume:" + vol);
 
     }
 }

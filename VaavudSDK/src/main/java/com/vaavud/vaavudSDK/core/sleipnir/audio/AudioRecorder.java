@@ -54,7 +54,7 @@ public class AudioRecorder extends Thread {
          * Loops until something outside of this thread stops it.
          * Reads the data from the recorder and writes it to the audio track for playback.
          */
-        Log.d(TAG, "Recording status: " + audioRecord.getRecordingState());
+//        Log.d(TAG, "Recording status: " + audioRecord.getRecordingState());
         while (!stopped) {
             try {
                 bytesRead = audioRecord.read(buffer, 0, buffer.length);
@@ -62,7 +62,7 @@ public class AudioRecorder extends Thread {
                     audioListener.newAudioBuffer(buffer);
                 }
             } catch (Throwable x) {
-                Log.w(TAG, "Error reading voice audio: " + x.getMessage());
+//                Log.w(TAG, "Error reading voice audio: " + x.getMessage());
                 x.printStackTrace();
                 stopped = true;
             }

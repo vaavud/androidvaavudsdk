@@ -44,6 +44,7 @@ public class SleipnirController implements AudioListener, TickReceiver, Rotation
 
     private AudioManager audioManager;
 
+    private final int THROTTLE_SPEED = 200;
     private final int sampleRate = 44100; //Hz
     private int processBufferSize = 512;
 
@@ -63,7 +64,7 @@ public class SleipnirController implements AudioListener, TickReceiver, Rotation
 
     private boolean active;
 
-    private Throttle throttleSpeed = new Throttle(200);
+    private Throttle throttleSpeed = new Throttle(THROTTLE_SPEED);
 
     // debug
     private boolean volumeHigh = false;
@@ -146,7 +147,7 @@ public class SleipnirController implements AudioListener, TickReceiver, Rotation
         for (int i = 0; i < audioBuffer.length -1; i++) {
             if (volumeHigh) {
                 if (Math.abs(audioBuffer[i]) + Math.abs(audioBuffer[i+1]) > 10000) {
-                    Log.d(TAG, "time to change UP: " + String.valueOf((sampleCounter + i) - lastChange) );
+//                    Log.d(TAG, "time to change UP: " + String.valueOf((sampleCounter + i) - lastChange) );
                     lastChange = sampleCounter + i;
                     volumeHigh = false;
                     audioPlayer.setVolume(0.1f);
@@ -154,7 +155,7 @@ public class SleipnirController implements AudioListener, TickReceiver, Rotation
                 }
             } else {
                 if (Math.abs(audioBuffer[i]) + Math.abs(audioBuffer[i+1]) < 50) {
-                    Log.d(TAG, "time to change Down: " + String.valueOf((sampleCounter + i) - lastChange) );
+//                    Log.d(TAG, "time to change Down: " + String.valueOf((sampleCounter + i) - lastChange) );
                     lastChange = sampleCounter + i;
                     volumeHigh = true;
                     audioPlayer.setVolume(0.8f);
@@ -257,7 +258,7 @@ public class SleipnirController implements AudioListener, TickReceiver, Rotation
         if (!active) {
             sharedPreferences.edit().clear().apply();
         } else {
-            Log.e(TAG, "Resetting while the measurement is live doens't work!");
+//            Log.e(TAG, "Resetting while the measurement is live doens't work!");
         }
 
     }
