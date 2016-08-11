@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:ignore="MissingTranslation">
+
+    <string name="connection_toast">Sleipnir connected</string>
+    <string name="permision_toast">Plug in again Sleipnir</string>
+
+    <string name="info_measuring">Measurement in progress</string>
+    <string name="info_no_signal">No signal</string>
+    <string name="info_no_audio_signal">No audio signal</string>
+    <string name="info_keep_steady">Keep vertical &#038; steady</string>
+
+    <string name="button_ok">OK</string>
+    <string name="sound_disclaimer_title">Warning</string>
+    <string name="sound_disclaimer">The sleipnir wind meter works by magic - and by drawing an audio signal from your phone. So please click OK to the volume level warning</string>
+
+
+</resources>

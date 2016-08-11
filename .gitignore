@@ -81,3 +81,9 @@ proguard/
 
 # Android Studio captures folder
 captures/
+gradle.properties
+gradlew
+gradlew.bat
+gradle/wrapper/gradle-wrapper.jar
+gradle/wrapper/gradle-wrapper.properties
+sleipnirSDK/proguard-rules.pro
