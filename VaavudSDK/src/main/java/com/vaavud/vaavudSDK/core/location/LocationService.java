@@ -1,6 +1,7 @@
 package com.vaavud.vaavudSDK.core.location;
 
 import android.content.Context;
+import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationListener;
@@ -14,6 +15,9 @@ import com.vaavud.vaavudSDK.core.model.LatLng;
 import com.vaavud.vaavudSDK.core.model.event.LocationEvent;
 import com.vaavud.vaavudSDK.model.event.BearingEvent;
 import com.vaavud.vaavudSDK.model.event.VelocityEvent;
+
+import java.io.IOException;
+import java.util.List;
 
 /**
  * Created by juan on 19/01/16.
@@ -54,7 +58,7 @@ public class LocationService {
         locationListener = new LocationListener() {
             public void onLocationChanged(Location location) {
                 if (isBetterLocation(location, lastLocation)) {
-                    Log.d(TAG, "Got better location (" + location.getLatitude() + "," + location.getLongitude() + ", " + location.getAccuracy() + ")");
+//                    Log.d(TAG, "Got better location (" + location.getLatitude() + "," + location.getLongitude() + ", " + location.getAccuracy() + ")");
                     //Log.i("LocationUpdateManager", "Got better location (" + location.getLatitude() + "," + location.getLongitude() + ", " + location.getAccuracy() + ")");
                     lastLocation = location;
                     locationEventListener.newVelocity(new VelocityEvent(lastLocation.getTime(), lastLocation.getSpeed()));
@@ -64,15 +68,15 @@ public class LocationService {
             }
 
             public void onStatusChanged(String provider, int status, Bundle extras) {
-                Log.d(TAG, "Status Changed: " + provider + " " + status + " " + extras);
+//                Log.d(TAG, "Status Changed: " + provider + " " + status + " " + extras);
             }
 
             public void onProviderEnabled(String provider) {
-                Log.d(TAG, "Provider Enabled " + provider);
+//                Log.d(TAG, "Provider Enabled " + provider);
             }
 
             public void onProviderDisabled(String provider) {
-                Log.d(TAG, "Provider Disabled " + provider);
+//                Log.d(TAG, "Provider Disabled " + provider);
             }
         };
 
@@ -108,6 +112,36 @@ public class LocationService {
             altitude = (float) lastLocation.getAltitude();
         }
         return altitude;
+    }
+
+    public String getGeoLocation() {
+        if (lastLocation != null && (System.currentTimeMillis() - lastLocation.getTime()) < TWO_MINUTES) {
+            Address address = null;
+            try {
+                List<Address> addresses = geocoder.getFromLocation(lastLocation.getLatitude(), lastLocation.getLongitude(), 1);
+                if (addresses.size() > 0) {
+                    address = addresses.get(0);
+
+                    if (address.getSubLocality() != null) {
+                        return address.getSubLocality();
+                    }
+                    if (address.getLocality() != null) {
+                        return address.getLocality();
+                    }
+                    if (address.getCountryName() != null) {
+                        return address.getCountryName();
+                    }
+                }
+
+            } catch (IllegalArgumentException e) {
+                return null;
+            } catch (IOException e) {
+                e.printStackTrace();
+                return null;
+            }
+
+        }
+        return null;
     }
 
     /**
