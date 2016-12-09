@@ -42,6 +42,7 @@ public class MjolnirController implements FrequencyReceiver {
 
     public void stop() {
         myMagneticFieldSensorManager.stopLogging();
+        clearData();
         myFFTManager.stop();
     }
 
@@ -51,13 +52,14 @@ public class MjolnirController implements FrequencyReceiver {
     }
 
     private void updateMeasureStatus() {
-
-        MeasureStatus newStatus = MeasureStatus.MEASURING;
-        if (orientation.isAvailable() && !orientation.isVertical()) {
-            newStatus = MeasureStatus.KEEP_VERTICAL;
-        }
-        if (!status.equals(newStatus)) {
-            statusListener.statusChanged(newStatus);
+        if (statusListener!=null) {
+            MeasureStatus newStatus = MeasureStatus.MEASURING;
+            if (orientation.isAvailable() && !orientation.isVertical()) {
+                newStatus = MeasureStatus.KEEP_VERTICAL;
+            }
+            if (!status.equals(newStatus)) {
+                statusListener.statusChanged(newStatus);
+            }
         }
     }
 

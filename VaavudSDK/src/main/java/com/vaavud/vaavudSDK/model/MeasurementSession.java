@@ -27,12 +27,12 @@ public class MeasurementSession implements Serializable {
     private String geoLocationNameLocalized;
     private long startTime;
     private long endTime;
-    private float windMean;
+    private float windMean =0;
     private float windMax;
     private float windDirection = -1;
-    private float trueWindMean;
+    private float trueWindMean = 0;
     private float trueWindMax;
-    private float trueWindDirection;
+    private float trueWindDirection = -1;
 
     private List<LocationEvent> location;
     private List<SpeedEvent> speed;

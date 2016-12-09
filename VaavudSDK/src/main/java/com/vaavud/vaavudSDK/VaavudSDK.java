@@ -71,29 +71,28 @@ public class VaavudSDK implements SpeedListener, DirectionListener, LocationEven
 				return sleipnirAvailable;
 		}
 
-		public int startSession() throws VaavudError {
+		public MeasurementSession startSession() throws VaavudError {
 				session = new MeasurementSession();
 				session.startSession();
 				location().setEventListener(this);
 				location().start();
-				if (config.getWindMeter().equals(WindMeter.MJOLNIR)) sdk.startMjolnir();
 				if (config.getWindMeter().equals(WindMeter.SLEIPNIR) & sleipnirAvailable)
 						sdk.startSleipnir();
-
-				return 0;
+				if (!sleipnirAvailable || config.getWindMeter().equals(WindMeter.MJOLNIR) ) sdk.startMjolnir();
+				return session;
 
 		}
 
 		public MeasurementSession stopSession() throws VaavudError {
+			location().stop();
+			if (config.getWindMeter().equals(WindMeter.SLEIPNIR) & sleipnirAvailable){
 				if (isRunning()) {
-						location().stop();
-						if (config.getWindMeter().equals(WindMeter.SLEIPNIR)) sdk.stopSleipnir();
-						else sdk.stopMjolnir();
-						return session.stopSession();
-				} else {
-						return null;
+					sdk.stopSleipnir();
 				}
-
+			}else{
+				sdk.stopMjolnir();
+			}
+			return session.stopSession();
 		}
 
 		private LocationService location() {
@@ -145,10 +144,10 @@ public class VaavudSDK implements SpeedListener, DirectionListener, LocationEven
 		@Override
 		public void speedChanged(SpeedEvent event) {
 				session.addSpeedEvent(event);
-				float windSpeed = session.getWindMean();
-				vaavudSpeed.speedChanged(new SpeedEvent(event.getTime(), windSpeed));
+//				float windSpeed = session.getWindMean();
+				vaavudSpeed.speedChanged(new SpeedEvent(event.getTime(), event.getSpeed()));
 				if (!estimateTrueWind()) {
-						TrueSpeedEvent newEvent = new TrueSpeedEvent(event.getTime(), windSpeed);
+						TrueSpeedEvent newEvent = new TrueSpeedEvent(event.getTime(), event.getSpeed());
 						session.addTrueSpeedEvent(newEvent);
 						vaavudSpeed.trueSpeedChanged(newEvent);
 				}
