@@ -360,7 +360,9 @@ public class SensorFusion implements SensorEventListener {
             gyroMatrix = getRotationMatrixFromOrientation(fusedOrientation);
             System.arraycopy(fusedOrientation, 0, gyroOrientation, 0, 3);
 
-            headingListener.newHeading((float) (fusedOrientation[0]*180/Math.PI+360)%360); // // FIXME: 19/01/16 asdasd
+            if (headingListener != null) {
+                headingListener.newHeading((float) (fusedOrientation[0] * 180 / Math.PI + 360) % 360); // // FIXME: 19/01/16 asdasd
+            }
 
             if (orientationListener != null) { // // FIXME: 19/01/16
                 orientationListener.newOrientation(fusedOrientation[0], fusedOrientation[1], fusedOrientation[2]);

@@ -5,6 +5,7 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.util.Log;
 
 import com.vaavud.vaavudSDK.core.model.MagneticFieldPoint;
 
@@ -45,7 +46,8 @@ public class MagneticFieldSensorManager implements SensorEventListener {
     }
 
     public void stopLogging() {
-        mSensorManager.unregisterListener(this);
+//        Log.d("MagneticFieldManager","Unregister");
+        mSensorManager.unregisterListener(this,mMagmeter);
     }
 
     public String getMagneticFieldSensorName() {
@@ -72,7 +74,7 @@ public class MagneticFieldSensorManager implements SensorEventListener {
         float time = (float) (event.timestamp - startTime) / 1000000000;
 
         Float[] magneticfieldReading = new Float[]{event.values[0], event.values[1], event.values[2]};
-
+//        Log.d("MagnetifFieldSensor",time+" "+magneticfieldReading);
         myDataManager.addMagneticFieldReading(new MagneticFieldPoint((long) time, magneticfieldReading));
     }
 }

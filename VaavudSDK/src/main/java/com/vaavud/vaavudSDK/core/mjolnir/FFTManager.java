@@ -30,7 +30,7 @@ public class FFTManager {
         @Override
         public void run() {
             generateFrequencyAmplitude();
-            myHandler.postDelayed(calculateFrequency, 200);
+            myHandler.postDelayed(calculateFrequency, 500);
         }
     };
 
@@ -69,6 +69,7 @@ public class FFTManager {
         } else {
             // do nothing
         }
+        magneticFieldData = null;
     }
 
 

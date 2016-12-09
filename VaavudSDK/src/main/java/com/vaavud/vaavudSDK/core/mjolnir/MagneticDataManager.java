@@ -1,6 +1,8 @@
 package com.vaavud.vaavudSDK.core.mjolnir;
 
 
+import android.util.Log;
+
 import com.vaavud.vaavudSDK.core.model.MagneticFieldPoint;
 
 import java.util.ArrayList;
@@ -18,24 +20,21 @@ public class MagneticDataManager {
     }
 
     public void addMagneticFieldReading(MagneticFieldPoint magReading) {
-        magneticfieldMeasurements.add(magReading);
+        synchronized (magneticfieldMeasurements) {
+            magneticfieldMeasurements.add(magReading);
+//            Log.d("MagneticDataManager", "Size of: " + magneticfieldMeasurements.size());
+        }
     }
 
     public List<MagneticFieldPoint> getLastXMagneticfieldMeasurements(Integer numberOfMeasurements) {
-
-        int listSize = magneticfieldMeasurements.size();
-        List<MagneticFieldPoint> magneticfieldMeasurementsList;
-
-        if (listSize > numberOfMeasurements) {
-            magneticfieldMeasurementsList = magneticfieldMeasurements.subList(listSize - numberOfMeasurements, listSize);
-
-            return magneticfieldMeasurementsList;
-        } else {
-
-            magneticfieldMeasurementsList = new ArrayList<>();
-            magneticfieldMeasurementsList.addAll(magneticfieldMeasurements);
-
-            return magneticfieldMeasurementsList;
+        synchronized (magneticfieldMeasurements) {
+            int listSize = magneticfieldMeasurements.size();
+            if (listSize > numberOfMeasurements) {
+                List<MagneticFieldPoint> lastPoints = new ArrayList<>(magneticfieldMeasurements.subList(listSize - numberOfMeasurements, listSize));
+                return lastPoints;
+            } else {
+                return new ArrayList<>(magneticfieldMeasurements);
+            }
         }
     }
 
